@@ -176,6 +176,15 @@
     transition:opacity .2s ease;
   }
   .subject-item.done .check{opacity:1;}
+  .subject-item .star{
+    margin-left:4px;
+    flex-shrink:0;
+    font-size:12px;
+    color:#E8A023;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .subject-item.favorited .star{opacity:1;}
 
   .progress-bar{
     padding:12px 16px;
@@ -354,6 +363,69 @@
     box-shadow:0 4px 12px rgba(31,86,115,0.4);
   }
 
+  .favorite-toggle{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    border:1.5px solid var(--graphite);
+    background:var(--paper);
+    color:var(--graphite);
+    padding:9px 16px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:all .25s ease;
+    font-weight:500;
+    margin-left:10px;
+  }
+  .favorite-toggle:hover{
+    border-color:#E8A023;
+    background:#FFF8E7;
+  }
+  .favorite-toggle.favorited{
+    background:#FFF8E7;
+    border-color:#E8A023;
+    color:#D68A00;
+  }
+  .favorite-toggle.favorited:hover{
+    box-shadow:0 2px 8px rgba(232,160,35,0.3);
+  }
+
+  .highlight{
+    background-color:#FFFACD;
+    padding:2px 3px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background-color .2s ease;
+  }
+  .highlight:hover{
+    background-color:#FFED4E;
+  }
+
+  .highlight-menu{
+    position:fixed;
+    background:#2B2B28;
+    color:#fff;
+    padding:8px 12px;
+    border-radius:4px;
+    z-index:100;
+    display:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .highlight-menu.show{display:block;}
+  .highlight-menu button{
+    background:none;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    padding:4px 8px;
+    border-radius:2px;
+    transition:background .2s ease;
+  }
+  .highlight-menu button:hover{background:rgba(255,255,255,.1);}
+
   /* body typography */
   .body-text{font-size:16.5px; line-height:1.7;}
   .body-text h2{
@@ -480,6 +552,9 @@
       <button class="menu-btn" id="menuBtn">☰ MENU</button>
       <span class="brand-mobile" id="topbarTitle">ODONTO // ESTUDOS</span>
     </div>
+    <div class="highlight-menu" id="highlightMenu">
+      <button id="highlightBtn">✎ Destacar</button>
+    </div>
     <div class="content" id="content">
       <div class="dedication">
         <strong>💙 Para Malu:</strong> <em>Este site foi desenvolvido com todo amor para auxiliar você nos seus estudos. Que cada disciplina conquistada seja um passo a mais rumo aos seus sonhos. Te amo muito! — Nicolas</em>
@@ -530,6 +605,84 @@
 
   let activeSlug = null;
 
+  function saveHighlights(slug, highlights){
+    const p = getProgress();
+    p[slug + '-highlights'] = highlights;
+    setProgress(p);
+  }
+
+  function getHighlights(slug){
+    const p = getProgress();
+    return p[slug + '-highlights'] || [];
+  }
+
+  function restoreHighlights(slug){
+    const highlights = getHighlights(slug);
+    const bodyText = document.querySelector('.body-text');
+    if(!bodyText) return;
+
+    highlights.forEach(h => {
+      const regex = new RegExp(`(${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+      bodyText.innerHTML = bodyText.innerHTML.replace(regex, '<span class="highlight" data-text="$1">$1</span>');
+    });
+
+    setupHighlightInteraction();
+  }
+
+  function setupHighlightInteraction(){
+    const highlights = document.querySelectorAll('.highlight');
+    highlights.forEach(h => {
+      h.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('highlightMenu');
+        menu.style.left = (e.pageX) + 'px';
+        menu.style.top = (e.pageY - 40) + 'px';
+        menu.classList.add('show');
+        menu.dataset.targetText = h.textContent;
+        menu.dataset.targetElement = highlights.indexOf(h);
+      });
+    });
+  }
+
+  document.addEventListener('mouseup', () => {
+    const selection = window.getSelection();
+    if(selection.toString().length > 0){
+      const menu = document.getElementById('highlightMenu');
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      menu.style.left = (rect.left + window.scrollX) + 'px';
+      menu.style.top = (rect.top + window.scrollY - 40) + 'px';
+      menu.classList.add('show');
+      menu.dataset.selectedText = selection.toString();
+    }
+  });
+
+  document.getElementById('highlightBtn').addEventListener('click', () => {
+    const selectedText = window.getSelection().toString();
+    if(!selectedText) return;
+
+    const bodyText = document.querySelector('.body-text');
+    const regex = new RegExp(`(${selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+    bodyText.innerHTML = bodyText.innerHTML.replace(regex, '<span class="highlight" data-text="$1">$1</span>');
+
+    const highlights = getHighlights(activeSlug);
+    if(!highlights.includes(selectedText)){
+      highlights.push(selectedText);
+      saveHighlights(activeSlug, highlights);
+    }
+
+    document.getElementById('highlightMenu').classList.remove('show');
+    window.getSelection().removeAllRanges();
+    setupHighlightInteraction();
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.highlight-menu') && !e.target.closest('.highlight')){
+      document.getElementById('highlightMenu').classList.remove('show');
+    }
+  });
+
   function buildNav(filterText){
     nav.innerHTML = '';
     const progress = getProgress();
@@ -556,8 +709,8 @@
       subjects.forEach(s => {
         const li = document.createElement('li');
         const btn = document.createElement('button');
-        btn.className = 'subject-item' + (s.slug === activeSlug ? ' active' : '') + (progress[s.slug] ? ' done' : '');
-        btn.innerHTML = `<span>${s.disciplina}</span><span class="code">${s.codigo||''}</span><span class="check">✓</span>`;
+        btn.className = 'subject-item' + (s.slug === activeSlug ? ' active' : '') + (progress[s.slug] ? ' done' : '') + (progress[s.slug + '-favorited'] ? ' favorited' : '');
+        btn.innerHTML = `<span>${s.disciplina}</span><span class="code">${s.codigo||''}</span><span class="check">✓</span><span class="star">⭐</span>`;
         btn.onclick = () => openSubject(s);
         li.appendChild(btn);
         list.appendChild(li);
@@ -622,9 +775,14 @@
           <span>nível <b>${s.periodo || '—'}</b></span>
         </div>
         <h1>${s.disciplina}</h1>
-        <button class="study-toggle ${done ? 'done' : ''}" id="studyBtn">
-          ${done ? '✓ Estudada' : 'Marcar como estudada'}
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="study-toggle ${done ? 'done' : ''}" id="studyBtn">
+            ${done ? '✓ Estudada' : 'Marcar como estudada'}
+          </button>
+          <button class="favorite-toggle ${progress[s.slug + '-favorited'] ? 'favorited' : ''}" id="favoriteBtn">
+            ${progress[s.slug + '-favorited'] ? '⭐ Favorita' : '☆ Favoritar'}
+          </button>
+        </div>
       </div>
       <div class="body-text">${htmlBody}</div>
     `;
@@ -637,10 +795,19 @@
       buildNav(searchInput.value);
     };
 
+    document.getElementById('favoriteBtn').onclick = () => {
+      const p = getProgress();
+      p[s.slug + '-favorited'] = !p[s.slug + '-favorited'];
+      setProgress(p);
+      openSubject(s);
+      buildNav(searchInput.value);
+    };
+
     topbarTitle.textContent = s.disciplina;
     buildNav(searchInput.value);
     closeSidebarMobile();
     window.scrollTo(0,0);
+    restoreHighlights(s.slug);
   }
 
   function closeSidebarMobile(){
