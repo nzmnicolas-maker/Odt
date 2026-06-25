@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Odonto // Estudos</title>
+<link rel="manifest" href="manifest.json">
 <script src="marked.umd.js"></script>
 <style>
   :root{
@@ -20,6 +21,21 @@
     --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
   }
+
+  /* Variáveis para o Modo Escuro */
+  [data-theme="dark"] {
+    --ink: #F7F4EC;
+    --ink-soft: #E4DFD2;
+    --paper: #121B22;
+    --paper-line: #243545;
+    --pen-blue: #5FA88B;
+    --pen-blue-soft: #1C2D3B;
+    --pen-red: #E66A5E;
+    --pen-red-soft: #2D1F1D;
+    --graphite: #E9ECE3;
+    --graphite-soft: #9FBFC9;
+  }
+
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -27,6 +43,7 @@
     color:var(--graphite);
     background:var(--paper);
     -webkit-font-smoothing:antialiased;
+    transition: background 0.3s ease, color 0.3s ease;
   }
   @media (prefers-reduced-motion: reduce){
     *{animation:none !important; transition:none !important;}
@@ -40,7 +57,7 @@
   .sidebar{
     width:280px;
     flex-shrink:0;
-    background:var(--ink);
+    background:#14202B;
     color:#CFE0E8;
     display:flex;
     flex-direction:column;
@@ -55,15 +72,35 @@
     padding:22px 20px 14px;
     border-bottom:1px solid rgba(255,255,255,.08);
   }
+  .brand-wrap{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
   .brand{
     font-family:var(--mono);
     font-size:13px;
     letter-spacing:.12em;
     text-transform:uppercase;
     color:#7FA8B8;
-    margin:0 0 4px;
+    margin:0;
   }
   .brand strong{color:#F2EFE6;}
+  
+  .theme-btn{
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #F2EFE6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .theme-btn:hover{ background: rgba(255,255,255,0.15); }
+
   .tagline{
     font-size:11px;
     color:#5E7886;
@@ -89,7 +126,7 @@
     box-shadow:0 0 0 2px rgba(31,86,115,.2);
   }
 
-  .nav{padding:6px 8px 24px;}
+  .nav{padding:6px 8px 12px;}
   .period-group{margin-top:8px;}
   .period-toggle{
     width:100%;
@@ -107,6 +144,7 @@
     justify-content:space-between;
     transition:all .2s ease;
     border-radius:3px;
+    -webkit-tap-highlight-color: transparent;
   }
   .period-toggle:hover{
     color:#F2EFE6;
@@ -121,12 +159,18 @@
     display:none;
     animation:fadeOut .2s ease;
   }
+  @media (prefers-reduced-motion: reduce) {
+    .period-group.collapsed .subject-list { animation: none; }
+  }
   @keyframes fadeOut{from{opacity:1;} to{opacity:0;}}
   .subject-list{
     list-style:none;
     margin:0;
     padding:2px 2px 4px;
     animation:fadeIn .2s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .subject-list { animation: none; }
   }
   @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
   .subject-item{
@@ -146,6 +190,7 @@
     cursor:pointer;
     transition:all .2s ease;
     position:relative;
+    -webkit-tap-highlight-color: transparent;
   }
   .subject-item .code{
     font-family:var(--mono);
@@ -162,7 +207,7 @@
   }
   .subject-item:hover .code{color:#7FA8B8;}
   .subject-item.active{
-    background:var(--pen-blue);
+    background:#1F5673;
     color:#fff;
     box-shadow:0 2px 8px rgba(31,86,115,0.3);
   }
@@ -200,7 +245,7 @@
     letter-spacing:.04em;
     margin-bottom:6px;
     display:flex;
-    justify-content:space-between;
+    justify-content: space-between;
   }
   .progress-label b{color:#F2EFE6;}
   .progress-track{
@@ -212,10 +257,35 @@
   }
   .progress-fill{
     height:100%;
-    background:linear-gradient(90deg, var(--pen-blue), #5FA88B);
+    background:linear-gradient(90deg, #1F5673, #5FA88B);
     border-radius:2px;
     transition:width .3s ease;
   }
+
+  /* Utility Box (Timer Pomodoro) */
+  .focus-timer {
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,.05);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #9FBFC9;
+  }
+  .timer-controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .timer-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .timer-btn:hover { background: rgba(255,255,255,0.15); }
 
   .sidebar-footer{
     margin-top:auto;
@@ -224,6 +294,27 @@
     font-family:var(--mono);
     color:#435863;
     border-top:1px solid rgba(255,255,255,.08);
+  }
+  .backup-zone {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .backup-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #5E7886;
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .backup-btn:hover {
+    color: #CFE0E8;
+    border-color: rgba(255,255,255,0.3);
   }
 
   /* ---------- main ---------- */
@@ -245,7 +336,7 @@
     gap:12px;
   }
   .menu-btn{
-    background:var(--ink);
+    background:#14202B;
     color:#fff;
     border:none;
     font-family:var(--mono);
@@ -256,6 +347,7 @@
     cursor:pointer;
     transition:all .2s ease;
     font-weight:500;
+    -webkit-tap-highlight-color: transparent;
   }
   .menu-btn:hover{
     background:#1F5673;
@@ -279,6 +371,7 @@
   }
   .dedication strong{color:var(--pen-blue); font-weight:600;}
   .dedication em{color:var(--graphite-soft); font-style:italic;}
+  
   .empty-state{
     max-width:520px;
     margin:120px auto 0;
@@ -299,7 +392,7 @@
   .stamp{
     border:1.5px solid var(--graphite);
     padding:20px 22px;
-    margin-bottom:34px;
+    margin-bottom:24px;
     position:relative;
     background:repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(20,32,43,0.025) 28px);
     border-radius:4px;
@@ -348,6 +441,7 @@
     cursor:pointer;
     transition:all .25s ease;
     font-weight:500;
+    -webkit-tap-highlight-color: transparent;
   }
   .study-toggle:hover{
     border-color:var(--pen-blue);
@@ -358,9 +452,6 @@
     border-color:var(--pen-blue);
     color:#fff;
     box-shadow:0 2px 8px rgba(31,86,115,0.3);
-  }
-  .study-toggle.done:hover{
-    box-shadow:0 4px 12px rgba(31,86,115,0.4);
   }
 
   .favorite-toggle{
@@ -377,6 +468,7 @@
     transition:all .25s ease;
     font-weight:500;
     margin-left:10px;
+    -webkit-tap-highlight-color: transparent;
   }
   .favorite-toggle:hover{
     border-color:#E8A023;
@@ -387,20 +479,15 @@
     border-color:#E8A023;
     color:#D68A00;
   }
-  .favorite-toggle.favorited:hover{
-    box-shadow:0 2px 8px rgba(232,160,35,0.3);
-  }
 
   .highlight{
     background-color:#FFFACD;
+    color: #2B2B28 !important;
     padding:2px 3px;
     border-radius:2px;
     cursor:pointer;
-    transition:background-color .2s ease;
   }
-  .highlight:hover{
-    background-color:#FFED4E;
-  }
+  [data-theme="dark"] .highlight { background-color: #4A441D; color: #FFFACD !important; }
 
   .highlight-menu{
     position:fixed;
@@ -422,9 +509,79 @@
     cursor:pointer;
     padding:4px 8px;
     border-radius:2px;
-    transition:background .2s ease;
   }
-  .highlight-menu button:hover{background:rgba(255,255,255,.1);}
+
+  /* 🛠️ SISTEMA DE MARCAÇÃO PARA TELAS DE TOQUE (CELULAR E TABLET) */
+  .pin-topic-btn {
+    display: inline-block;
+    margin-left: 10px;
+    opacity: 0.35;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px 10px;
+    transition: opacity 0.2s, transform 0.2s;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .pin-topic-btn.pinned {
+    opacity: 1 !important;
+    transform: scale(1.1);
+  }
+  
+  .body-text h2.topic-pinned {
+    border-left: 4px solid var(--pen-red);
+    padding-left: 10px;
+    background: var(--pen-red-soft);
+    border-radius: 0 4px 4px 0;
+  }
+  .body-text h3.topic-pinned {
+    border-left: 3px solid var(--pen-blue);
+    padding-left: 8px;
+    background: var(--pen-blue-soft);
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Painel Superior de Tópicos Importantes */
+  .pinned-topics-summary {
+    background: var(--pen-red-soft);
+    border-left: 3px solid var(--pen-red);
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    border-radius: 0 3px 3px 0;
+  }
+  [data-theme="dark"] .pinned-topics-summary {
+    background: #2D1F1D;
+    border-left-color: #E66A5E;
+  }
+  .pinned-topics-summary h4 {
+    margin: 0 0 8px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink);
+  }
+  .pinned-topics-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pinned-topic-link {
+    font-size: 14px;
+    color: var(--pen-blue);
+    text-decoration: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    display: block;
+    padding: 4px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   /* body typography */
   .body-text{font-size:16.5px; line-height:1.7;}
@@ -435,12 +592,14 @@
     color:var(--ink);
     border-bottom:1px solid var(--paper-line);
     padding-bottom:8px;
+    transition: all 0.2s ease;
   }
   .body-text h3{
     font-family:var(--serif);
     font-size:17.5px;
     margin:26px 0 10px;
     color:var(--ink-soft);
+    transition: all 0.2s ease;
   }
   .body-text p{margin:0 0 14px;}
   .body-text ul, .body-text ol{margin:0 0 16px; padding-left:22px;}
@@ -459,7 +618,7 @@
     vertical-align:top;
   }
   .body-text th{
-    background:#EFEAD9;
+    background: var(--paper-line);
     font-family:var(--mono);
     font-size:11px;
     text-transform:uppercase;
@@ -471,7 +630,6 @@
     border-top:1px solid var(--paper-line);
     margin:32px 0;
   }
-  .body-text em{color:var(--graphite-soft);}
 
   .callout{
     border-left:3px solid var(--pen-blue);
@@ -528,7 +686,10 @@
 <div class="shell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <p class="brand">ODONTO // <strong>ESTUDOS</strong></p>
+      <div class="brand-wrap">
+        <p class="brand">ODONTO // <strong>ESTUDOS</strong></p>
+        <button class="theme-btn" id="themeToggle">🌙</button>
+      </div>
       <p class="tagline">Grade curricular &mdash; 3º ao 7º período</p>
     </div>
     <div class="search-wrap">
@@ -543,8 +704,24 @@
         <div class="progress-fill" id="progressFill" style="width:0%"></div>
       </div>
     </div>
+    
     <nav class="nav" id="nav"></nav>
-    <div class="sidebar-footer">feito à mão, matéria por matéria.</div>
+
+    <div class="focus-timer">
+      <span>⏱️ TIMER DE FOCO: <b id="timerDisplay">25:00</b></span>
+      <div class="timer-controls">
+        <button class="timer-btn" id="startTimerBtn">Iniciar</button>
+        <button class="timer-btn" id="resetTimerBtn">Resetar</button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div>feito à mão, matéria por matéria.</div>
+      <div class="backup-zone">
+        <button class="backup-btn" id="exportBtn">📤 Exportar OS</button>
+        <button class="backup-btn" id="importBtn">📥 Importar OS</button>
+      </div>
+    </div>
   </aside>
 
   <div class="main">
@@ -561,7 +738,7 @@
       </div>
       <div class="empty-state">
         <h1>Selecione uma disciplina</h1>
-        <p>Use o menu ao lado para escolher o período e a matéria que você quer revisar. Seu progresso de estudo fica salvo neste dispositivo.</p>
+        <p>Use o menu ao lado para escolher o período e a matéria que você quer revisar. Seu progresso de estudo fica salvo neste dispositivo e funciona de forma 100% offline.</p>
       </div>
     </div>
   </div>
@@ -570,6 +747,12 @@
 <script src="site-data.js"></script>
 <script>
 (function(){
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log("SW offline não registrado", err));
+    });
+  }
+
   const nav = document.getElementById('nav');
   const content = document.getElementById('content');
   const sidebar = document.getElementById('sidebar');
@@ -577,6 +760,7 @@
   const menuBtn = document.getElementById('menuBtn');
   const topbarTitle = document.getElementById('topbarTitle');
   const searchInput = document.getElementById('searchInput');
+  const themeToggle = document.getElementById('themeToggle');
 
   const STORAGE_KEY = 'odonto-estudos-progresso';
   function getProgress(){
@@ -585,6 +769,95 @@
   function setProgress(p){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
   }
+
+  // --- MOTOR DO SISTEMA DE TEMAS (DARK MODE) ---
+  let currentTheme = localStorage.getItem('odonto-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+
+  themeToggle.addEventListener('click', () => {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('odonto-theme', currentTheme);
+    themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+  });
+
+  // --- MOTOR DE BACKUP ---
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getProgress()));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "odonto_estudos_backup.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  });
+
+  document.getElementById('importBtn').addEventListener('click', () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    fileInput.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.readAsText(file,'UTF-8');
+      reader.onload = readerEvent => {
+        try {
+          const importedData = JSON.parse(readerEvent.target.result);
+          setProgress(importedData);
+          alert('Backup do sistema restaurado com sucesso!');
+          window.location.reload();
+        } catch(err) {
+          alert('Arquivo de backup inválido.');
+        }
+      }
+    }
+    fileInput.click();
+  });
+
+  // --- MOTOR DO TIMER POMODORO ---
+  let timerInterval = null;
+  let timeRemaining = 25 * 60;
+  const timerDisplay = document.getElementById('timerDisplay');
+  const startTimerBtn = document.getElementById('startTimerBtn');
+
+  function updateTimerUI() {
+    const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+    const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+    timerDisplay.textContent = `${minutes}:${seconds}`;
+  }
+
+  startTimerBtn.addEventListener('click', () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      startTimerBtn.textContent = 'Iniciar';
+    } else {
+      startTimerBtn.textContent = 'Pausar';
+      timerInterval = setInterval(() => {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+          updateTimerUI();
+        } else {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          startTimerBtn.textContent = 'Iniciar';
+          alert('Fim do bloco de foco! Hora de descansar um pouco.');
+          timeRemaining = 25 * 60;
+          updateTimerUI();
+        }
+      }, 1000);
+    }
+  });
+
+  document.getElementById('resetTimerBtn').addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timeRemaining = 25 * 60;
+    startTimerBtn.textContent = 'Iniciar';
+    updateTimerUI();
+  });
+
 
   function updateProgressBar(){
     const progress = getProgress();
@@ -663,6 +936,7 @@
     if(!selectedText) return;
 
     const bodyText = document.querySelector('.body-text');
+    if (!bodyText) return;
     const regex = new RegExp(`(${selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
     bodyText.innerHTML = bodyText.innerHTML.replace(regex, '<span class="highlight" data-text="$1">$1</span>');
 
@@ -682,6 +956,95 @@
       document.getElementById('highlightMenu').classList.remove('show');
     }
   });
+
+  // --- ARQUITETURA DE MARCAÇÃO DE TÓPICOS INTERNOS OTIMIZADA PARA TOUCH SCRENS (📌) ---
+  function setupTopicBookmarks(slug) {
+    const headings = document.querySelectorAll('.body-text h2, .body-text h3');
+    const summaryContainer = document.getElementById('pinnedSummaryContainer');
+    
+    function updateSummaryUI() {
+      const currentProgress = getProgress();
+      const currentPinned = currentProgress[slug + '-pinned-headings'] || [];
+      
+      if (currentPinned.length === 0) {
+        summaryContainer.innerHTML = '';
+        summaryContainer.style.display = 'none';
+        return;
+      }
+      
+      summaryContainer.style.display = 'block';
+      let listItems = currentPinned.map(item => {
+        return `<li><a class="pinned-topic-link" data-target="${item.id}">📌 ${item.text}</a></li>`;
+      }).join('');
+      
+      summaryContainer.innerHTML = `
+        <div class="pinned-topics-summary">
+          <h4>📌 Tópicos Importantes Destacados</h4>
+          <ul class="pinned-topics-list">${listItems}</ul>
+        </div>
+      `;
+      
+      summaryContainer.querySelectorAll('.pinned-topic-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('data-target');
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      });
+    }
+
+    headings.forEach((heading, index) => {
+      const headingId = `heading-${slug}-${index}`;
+      heading.id = headingId;
+      heading.style.position = 'relative';
+      
+      const pinBtn = document.createElement('button');
+      pinBtn.className = 'pin-topic-btn';
+      pinBtn.innerHTML = '📌';
+      pinBtn.title = 'Marcar este tópico como importante';
+      
+      const p = getProgress();
+      const pinnedList = p[slug + '-pinned-headings'] || [];
+      const isPinned = pinnedList.some(item => item.id === headingId);
+      
+      if (isPinned) {
+        pinBtn.classList.add('pinned');
+        heading.classList.add('topic-pinned');
+      }
+      
+      heading.appendChild(pinBtn);
+      
+      pinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const currentProgress = getProgress();
+        let currentPinned = currentProgress[slug + '-pinned-headings'] || [];
+        const alreadyPinnedIndex = currentPinned.findIndex(item => item.id === headingId);
+        
+        if (alreadyPinnedIndex > -1) {
+          currentPinned.splice(alreadyPinnedIndex, 1);
+          pinBtn.classList.remove('pinned');
+          heading.classList.remove('topic-pinned');
+        } else {
+          currentPinned.push({
+            id: headingId,
+            text: heading.textContent.replace('📌', '').trim(),
+            tag: heading.tagName
+          });
+          pinBtn.classList.add('pinned');
+          heading.classList.add('topic-pinned');
+        }
+        
+        currentProgress[slug + '-pinned-headings'] = currentPinned;
+        setProgress(currentProgress);
+        updateSummaryUI();
+      });
+    });
+    
+    updateSummaryUI();
+  }
 
   function buildNav(filterText){
     nav.innerHTML = '';
@@ -722,15 +1085,6 @@
     updateProgressBar();
   }
 
-  function findSubject(slug){
-    for(const p of SITE_DATA){
-      const s = p.subjects.find(x => x.slug === slug);
-      if(s) return s;
-    }
-    return null;
-  }
-
-  // ---- Obsidian-style callout parser: > [!tip] Title \n> body ----
   function preprocessCallouts(md){
     const lines = md.split('\n');
     let out = [];
@@ -764,7 +1118,6 @@
     const done = !!progress[s.slug];
 
     const calloutHtml = preprocessCallouts(s.body);
-    // remove callout source lines already converted to html blocks, then parse rest as markdown
     const htmlBody = marked.parse(calloutHtml, { gfm: true, breaks: false });
 
     content.innerHTML = `
@@ -784,6 +1137,7 @@
           </button>
         </div>
       </div>
+      <div id="pinnedSummaryContainer" style="display:none;"></div>
       <div class="body-text">${htmlBody}</div>
     `;
 
@@ -808,6 +1162,7 @@
     closeSidebarMobile();
     window.scrollTo(0,0);
     restoreHighlights(s.slug);
+    setupTopicBookmarks(s.slug);
   }
 
   function closeSidebarMobile(){
@@ -824,8 +1179,6 @@
   searchInput.addEventListener('input', (e) => buildNav(e.target.value));
 
   buildNav('');
-
-  // open first subject by default on desktop-wide screens isn't necessary; keep empty state.
 })();
 </script>
 </body>
