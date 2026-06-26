@@ -1,19 +1,20 @@
 /* ======================================================
    ASSISTENTE DE ESTUDOS — Odonto // Estudos
    ======================================================
-   1. Cole sua chave da API do Gemini na linha abaixo,
-      entre as aspas, no lugar de COLE_SUA_CHAVE_AQUI.
-   2. Gere a chave grátis em: https://aistudio.google.com/apikey
-   3. Nunca compartilhe essa chave por print/mensagem —
-      cole direto aqui no arquivo, no seu próprio dispositivo.
-====================================================== */
-const GEMINI_API_KEY = "";
+   Atenção: A chave da API agora é carregada automaticamente 
+   do localStorage do seu navegador. 
+   NUNCA cole sua chave aqui no código.
+   ====================================================== */
 
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_MODEL = "gemini-1.5-flash";
+
+// Função para buscar a chave salva no navegador
+function getApiKey() {
+  return localStorage.getItem('GEMINI_API_KEY_ODONTO');
+}
 
 (function(){
-  let chatHistory = []; // {role: 'user'|'model', text: '...'}
+  let chatHistory = []; 
   let isWaiting = false;
 
   function currentSubjectContext(){
@@ -34,6 +35,11 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
   }
 
   async function sendToGemini(userText){
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error("Chave de API não configurada.");
+
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
     const contents = chatHistory.map(m => ({
       role: m.role,
       parts: [{ text: m.text }]
@@ -54,7 +60,7 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
 
     if(!res.ok){
       const errText = await res.text();
-      throw new Error(`Erro ${res.status}: ${errText.slice(0,200)}`);
+      throw new Error(`Erro ${res.status}: Ocorreu um problema na comunicação com a API.`);
     }
     const data = await res.json();
     const candidate = data.candidates && data.candidates[0];
@@ -71,21 +77,12 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
     const input = document.getElementById('aiInput');
     const sendBtn = document.getElementById('aiSendBtn');
     const messages = document.getElementById('aiMessages');
-    const subjectLabel = document.getElementById('aiSubjectLabel');
 
-    if(!panel || !toggleBtn) return; // widget markup not present, skip silently
-
-    function updateSubjectLabel(){
-      const subj = currentSubjectContext();
-      subjectLabel.textContent = subj ? `lendo: ${subj.disciplina}` : 'nenhuma disciplina aberta';
-    }
+    if(!panel || !toggleBtn) return; 
 
     toggleBtn.onclick = () => {
       panel.classList.toggle('open');
-      if(panel.classList.contains('open')){
-        updateSubjectLabel();
-        input.focus();
-      }
+      if(panel.classList.contains('open')) input.focus();
     };
     closeBtn.onclick = () => panel.classList.remove('open');
 
@@ -95,31 +92,17 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
       div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(text) : text;
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
-      return div;
-    }
-
-    function appendLoading(){
-      const div = document.createElement('div');
-      div.className = 'ai-msg ai-msg-model ai-msg-loading';
-      div.id = 'aiLoadingMsg';
-      div.textContent = 'digitando...';
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    }
-    function removeLoading(){
-      const el = document.getElementById('aiLoadingMsg');
-      if(el) el.remove();
     }
 
     async function handleSend(){
       const text = input.value.trim();
       if(!text || isWaiting) return;
 
-      if(GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI'){
+      // Verifica se a chave existe antes de enviar
+      if(!getApiKey()){
         appendMessage('user', text);
         input.value = '';
-        input.style.height = 'auto';
-        appendMessage('model', '⚠ A chave da API ainda não foi configurada no arquivo `assistant.js`. Peça pra quem configurou o site colar a chave do Gemini lá.');
+        appendMessage('model', '⚠ **API Key não encontrada!**<br>Clique no botão ⚙️ (engrenagem) no menu lateral para configurar sua chave corretamente.');
         return;
       }
 
@@ -128,18 +111,15 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
       input.style.height = 'auto';
       isWaiting = true;
       sendBtn.disabled = true;
-      appendLoading();
 
       try{
         const reply = await sendToGemini(text);
-        removeLoading();
         appendMessage('model', reply);
         chatHistory.push({ role: 'user', text: text });
         chatHistory.push({ role: 'model', text: reply });
         if(chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
       }catch(err){
-        removeLoading();
-        appendMessage('model', '⚠ Não consegui responder agora (' + err.message + '). Tenta de novo em alguns segundos.');
+        appendMessage('model', '⚠ Não consegui responder agora. Verifique se sua chave API está correta e tente novamente.');
       }finally{
         isWaiting = false;
         sendBtn.disabled = false;
@@ -153,13 +133,6 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
         handleSend();
       }
     });
-    input.addEventListener('input', () => {
-      input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-    });
-
-    // refresh subject label whenever a subject is opened elsewhere on the page
-    document.addEventListener('click', () => setTimeout(updateSubjectLabel, 50));
   }
 
   if(document.readyState === 'loading'){
