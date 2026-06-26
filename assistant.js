@@ -7,7 +7,7 @@
    3. Nunca compartilhe essa chave por print/mensagem —
       cole direto aqui no arquivo, no seu próprio dispositivo.
 ====================================================== */
-const GEMINI_API_KEY = "AQ.Ab8RN6Lp1OpXUF0lOtLjg98CLiKriA_ytlZuocByQJRz-c0opw";
+const GEMINI_API_KEY = "";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
