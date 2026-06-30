@@ -1,1 +1,72 @@
+# ============================================
+# 🔐 GIT IGNORE - Não commitar arquivos sensíveis!
+# ============================================
+
+# -------- Ambiente e Secrets --------
 .env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.json
+config/secrets.js
+
+# -------- Node.js --------
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-error.log
+.npm
+
+# -------- Backend --------
+backend/node_modules/
+backend/.env
+backend/dist/
+backend/build/
+backend/logs/
+
+# -------- IDE e Editor --------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# -------- OS --------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# -------- Caches --------
+.cache/
+.eslintcache
+.parcel-cache
+
+# -------- Logs --------
+logs/
+*.log
+lerna-debug.log*
+
+# -------- Distribuição --------
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# -------- Testes --------
+coverage/
+.nyc_output/
+.jest/
+
+# -------- Documentação temporária --------
+docs-temp/
+*.tmp
