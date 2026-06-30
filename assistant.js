@@ -1,251 +1,168 @@
 /* ======================================================
    ASSISTENTE DE ESTUDOS — Odonto // Estudos
    ======================================================
-   🔐 VERSÃO SEGURA - Comunicação Backend
-   
-   ✅ SEM chave API no frontend
-   ✅ SEM localStorage de chaves sensíveis
-   ✅ Autenticação via JWT
-   ✅ Rate limiting no servidor
-   ====================================================== */
+   Esta versão NÃO contém nenhuma chave de API.
+   As perguntas são enviadas para um Cloudflare Worker,
+   que guarda a chave do Gemini escondida e responde por trás.
 
-class OdontoAssistant {
-  constructor(backendUrl = '/api/chat') {
-    this.backendUrl = backendUrl;
-    this.token = null;
-    this.sessionId = this.generateSessionId();
-    this.chatHistory = [];
-    this.isWaiting = false;
-    this.isInitialized = false;
+   Configure abaixo a URL do seu Worker (depois de publicá-lo
+   na Cloudflare). Algo como:
+   https://odonto-assistente.SEU-USUARIO.workers.dev
+====================================================== */
+const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
+
+(function(){
+  let chatHistory = []; // {role: 'user'|'model', text: '...'}
+  let isWaiting = false;
+
+  function currentSubjectContext(){
+    return window.currentOpenSubject || null;
   }
 
-  generateSessionId() {
-    return `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  function systemInstruction(){
+    const subj = currentSubjectContext();
+    let base = "Você é um assistente de estudos de Odontologia, ajudando uma estudante a revisar o conteúdo das disciplinas do curso. " +
+      "Responda sempre em português do Brasil, de forma clara, didática e organizada (pode usar listas e negrito quando ajudar). " +
+      "Seja preciso tecnicamente. Se a pergunta não tiver relação com Odontologia ou com os estudos, responda com gentileza que você é focado em ajudar com o conteúdo do curso.";
+    if(subj){
+      base += `\n\nA aluna está estudando agora a disciplina "${subj.disciplina}" (${subj.codigo}). ` +
+        "Use o conteúdo de referência abaixo como base principal para responder, mas você pode complementar com seu conhecimento geral de Odontologia quando fizer sentido:\n\n---\n" +
+        subj.body + "\n---";
+    }
+    return base;
   }
 
-  /**
-   * Inicializar assistente (obter token do backend)
-   */
-  async initialize() {
-    try {
-      const response = await fetch(`${this.backendUrl}/token`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+  async function sendToAssistant(userText){
+    const contents = chatHistory.map(m => ({
+      role: m.role,
+      parts: [{ text: m.text }]
+    }));
+    contents.push({ role: 'user', parts: [{ text: userText }] });
 
-      if (!response.ok) {
-        throw new Error('Erro ao conectar com servidor');
-      }
+    const body = {
+      contents: contents,
+      systemInstruction: { parts: [{ text: systemInstruction() }] },
+      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
+    };
 
-      const data = await response.json();
-      this.token = data.token;
-      this.isInitialized = true;
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
 
-      console.log('✅ Assistente inicializado com segurança');
-      return true;
-    } catch (error) {
-      console.error('❌ Erro ao inicializar assistente:', error);
-      this.showError('Não consegui conectar com o assistente. Tente recarregar a página.');
-      return false;
+    if(!res.ok){
+      const errText = await res.text();
+      throw new Error(`Erro ${res.status}: ${errText.slice(0,200)}`);
     }
+    const data = await res.json();
+    const candidate = data.candidates && data.candidates[0];
+    const text = candidate && candidate.content && candidate.content.parts
+      ? candidate.content.parts.map(p => p.text || '').join('')
+      : '(sem resposta)';
+    return text;
   }
 
-  /**
-   * Enviar mensagem para o assistente
-   */
-  async sendMessage(userText) {
-    if (!this.isInitialized) {
-      this.showError('Assistente não inicializado. Carregando...');
-      const ready = await this.initialize();
-      if (!ready) return null;
-    }
-
-    if (!userText || userText.trim().length === 0) {
-      return null;
-    }
-
-    this.isWaiting = true;
-
-    try {
-      const response = await fetch(this.backendUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.token}`
-        },
-        body: JSON.stringify({
-          message: userText,
-          sessionId: this.sessionId,
-          currentSubject: window.currentOpenSubject || null
-        })
-      });
-
-      if (response.status === 401) {
-        // Token expirado, obter novo
-        this.token = null;
-        const ready = await this.initialize();
-        if (!ready) {
-          this.showError('Sua sessão expirou. Recarregue a página.');
-          return null;
-        }
-        // Tentar novamente
-        return this.sendMessage(userText);
-      }
-
-      if (response.status === 429) {
-        this.showError('⏱️ Muitas requisições. Aguarde alguns segundos e tente novamente.');
-        return null;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        this.showError(errorData.error || 'Erro ao processar sua mensagem');
-        return null;
-      }
-
-      const data = await response.json();
-      
-      // Adicionar ao histórico
-      this.chatHistory.push({ role: 'user', text: userText });
-      this.chatHistory.push({ role: 'model', text: data.reply });
-
-      // Manter apenas últimas 20 mensagens
-      if (this.chatHistory.length > 40) {
-        this.chatHistory = this.chatHistory.slice(-40);
-      }
-
-      return data.reply;
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      this.showError('Erro de conexão. Verifique sua internet e tente novamente.');
-      return null;
-    } finally {
-      this.isWaiting = false;
-    }
-  }
-
-  /**
-   * Definir disciplina atual (para contexto)
-   */
-  setCurrentSubject(subject) {
-    if (subject) {
-      console.log(`📚 Contexto atualizado: ${subject.disciplina}`);
-    }
-  }
-
-  /**
-   * Exibir erro para usuário
-   */
-  showError(message) {
-    const errorDiv = document.getElementById('aiErrorMsg');
-    if (errorDiv) {
-      errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 5000);
-    }
-  }
-}
-
-/**
- * Inicializar Widget de Chat na Página
- */
-(function() {
-  let assistant = null;
-
-  function initWidget() {
+  function initWidget(){
     const panel = document.getElementById('aiPanel');
     const toggleBtn = document.getElementById('aiToggleBtn');
     const closeBtn = document.getElementById('aiCloseBtn');
     const input = document.getElementById('aiInput');
     const sendBtn = document.getElementById('aiSendBtn');
     const messages = document.getElementById('aiMessages');
+    const subjectLabel = document.getElementById('aiSubjectLabel');
 
-    if (!panel || !toggleBtn || !assistant) {
-      console.warn('⚠️ Elementos do assistente não encontrados');
-      return;
+    if(!panel || !toggleBtn) return; // widget markup not present, skip silently
+
+    function updateSubjectLabel(){
+      const subj = currentSubjectContext();
+      subjectLabel.textContent = subj ? `lendo: ${subj.disciplina}` : 'nenhuma disciplina aberta';
     }
 
-    // Determinar URL do backend
-    const backendUrl = window.ASSISTANT_BACKEND_URL || '/api/chat';
-    assistant = new OdontoAssistant(backendUrl);
-
-    // Abrir/Fechar painel
     toggleBtn.onclick = () => {
       panel.classList.toggle('open');
-      if (panel.classList.contains('open')) {
+      if(panel.classList.contains('open')){
+        updateSubjectLabel();
         input.focus();
-        // Inicializar se necessário
-        if (!assistant.isInitialized) {
-          assistant.initialize();
-        }
       }
     };
-
     closeBtn.onclick = () => panel.classList.remove('open');
 
-    // Adicionar mensagem ao painel
-    function appendMessage(role, text) {
+    function appendMessage(role, text){
       const div = document.createElement('div');
       div.className = 'ai-msg ' + (role === 'user' ? 'ai-msg-user' : 'ai-msg-model');
-      
-      // Renderizar markdown se disponível
-      if (typeof marked !== 'undefined') {
-        div.innerHTML = marked.parse(text);
-      } else {
-        div.textContent = text;
-      }
-      
+      div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(text) : text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    function appendLoading(){
+      const div = document.createElement('div');
+      div.className = 'ai-msg ai-msg-model ai-msg-loading';
+      div.id = 'aiLoadingMsg';
+      div.textContent = 'digitando...';
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     }
+    function removeLoading(){
+      const el = document.getElementById('aiLoadingMsg');
+      if(el) el.remove();
+    }
 
-    // Enviar mensagem
-    async function handleSend() {
+    async function handleSend(){
       const text = input.value.trim();
-      if (!text || assistant.isWaiting) return;
+      if(!text || isWaiting) return;
+
+      if(WORKER_URL === 'COLE_AQUI_A_URL_DO_SEU_WORKER'){
+        appendMessage('user', text);
+        input.value = '';
+        input.style.height = 'auto';
+        appendMessage('model', '⚠ O assistente ainda não foi conectado ao servidor. Peça pra quem configurou o site colar a URL do Worker no arquivo `assistant.js`.');
+        return;
+      }
 
       appendMessage('user', text);
       input.value = '';
       input.style.height = 'auto';
+      isWaiting = true;
       sendBtn.disabled = true;
+      appendLoading();
 
-      const reply = await assistant.sendMessage(text);
-      
-      if (reply) {
+      try{
+        const reply = await sendToAssistant(text);
+        removeLoading();
         appendMessage('model', reply);
-      } else {
-        appendMessage('model', '⚠️ Não consegui responder. Tente novamente.');
+        chatHistory.push({ role: 'user', text: text });
+        chatHistory.push({ role: 'model', text: reply });
+        if(chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+      }catch(err){
+        removeLoading();
+        appendMessage('model', '⚠ Não consegui responder agora (' + err.message + '). Tenta de novo em alguns segundos.');
+      }finally{
+        isWaiting = false;
+        sendBtn.disabled = false;
       }
-
-      sendBtn.disabled = false;
-      input.focus();
     }
 
-    // Event listeners
     sendBtn.onclick = handleSend;
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         handleSend();
       }
     });
-
-    // Auto-resize textarea
     input.addEventListener('input', () => {
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     });
+
+    document.addEventListener('click', () => setTimeout(updateSubjectLabel, 50));
   }
 
-  // Inicializar quando o DOM está pronto
-  if (document.readyState === 'loading') {
+  if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', initWidget);
   } else {
     initWidget();
   }
-
-  // Expor globalmente se necessário
-  window.OdontoAssistant = OdontoAssistant;
 })();
