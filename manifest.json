@@ -1,18 +1,70 @@
 {
-  "name": "Odonto Estudos PWA",
+  "name": "Odonto Estudos - Sistema de Gestão de Conteúdo",
   "short_name": "OdontoEstudos",
-  "description": "Sistema de Gestão de Estudos e Conteúdos de Odontologia",
-  "start_url": "index.html",
+  "description": "Plataforma completa de estudos odontológicos com assistente IA, progress tracking e offline support",
+  "start_url": "/Odt/",
+  "scope": "/Odt/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#F7F4EC",
   "theme_color": "#14202B",
-  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect width='540' height='720' fill='%23F7F4EC'/><rect width='540' height='120' fill='%2314202B'/><text x='270' y='70' font-family='monospace' font-size='48' font-weight='bold' fill='%23F7F4EC' text-anchor='middle'>OD</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2314202B'/><text x='50' y='65' font-family='monospace' font-size='45' font-weight='bold' fill='%23F7F4EC' text-anchor='middle'>OD</text></svg>",
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%2314202B' rx='40'/><text x='96' y='128' font-family='monospace' font-size='100' font-weight='bold' fill='%23F7F4EC' text-anchor='middle'>OD</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%2314202B'/><text x='256' y='360' font-family='monospace' font-size='280' font-weight='bold' fill='%23F7F4EC' text-anchor='middle'>OD</text></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Buscar Disciplinas",
+      "short_name": "Buscar",
+      "description": "Abrir busca de disciplinas",
+      "url": "/Odt/?action=search",
+      "icons": [
+        {
+          "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%231F5673'/><text x='48' y='68' font-family='monospace' font-size='40' fill='%23ffffff' text-anchor='middle'>🔍</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Assistente IA",
+      "short_name": "Assistente",
+      "description": "Abrir assistente de estudos",
+      "url": "/Odt/?action=assistant",
+      "icons": [
+        {
+          "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%231F5673'/><text x='48' y='68' font-family='monospace' font-size='40' fill='%23ffffff' text-anchor='middle'>🤖</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }
