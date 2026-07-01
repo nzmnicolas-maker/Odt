@@ -507,6 +507,38 @@
   }
   [data-theme="dark"] .highlight { background-color: #4A441D; color: #FFFACD !important; }
 
+  /* 🔧 MELHORIA: trecho do texto (não só o nome da disciplina) que combinou com a busca,
+     exibido embaixo do item na lista lateral */
+  .search-snippet{
+    display:block;
+    font-family:var(--mono);
+    font-size:10.5px;
+    line-height:1.5;
+    color:#7FA8B8;
+    padding:2px 10px 8px 12px;
+    margin-top:-4px;
+    white-space:normal;
+    text-align:left;
+  }
+  .search-snippet mark{
+    background:#FFE873;
+    color:#14202B;
+    padding:0 2px;
+    border-radius:2px;
+    font-style:normal;
+  }
+  /* 🔧 MELHORIA: destaque temporário que "acende" o trecho exato ao abrir a disciplina
+     vinda de uma busca, pra não precisar ler o texto todo procurando */
+  .search-jump-hit{
+    background:#FFE873;
+    color:#14202B;
+    padding:1px 3px;
+    border-radius:2px;
+    transition: background-color 1.6s ease, color 1.6s ease;
+    scroll-margin-top: 90px;
+  }
+  [data-theme="dark"] .search-jump-hit{ background:#8A6D1D; color:#FFFACD; }
+
   .highlight-menu{
     position:fixed;
     background:#2B2B28;
@@ -878,7 +910,7 @@
       <p class="tagline">Grade curricular &mdash; 3º ao 7º período</p>
     </div>
     <div class="search-wrap">
-      <input class="search-input" id="searchInput" type="text" placeholder="buscar disciplina...">
+      <input class="search-input" id="searchInput" type="text" placeholder="buscar disciplina ou assunto no texto...">
     </div>
     <div class="progress-bar">
       <div class="progress-label">
@@ -1275,6 +1307,61 @@
     return haystacks.some(field => normalizeText(field).includes(ft));
   }
 
+  /* 🔧 MELHORIA: pega um pedacinho do TEXTO da matéria (não do título) onde o termo
+     buscado aparece, pra mostrar na lista lateral por que aquela disciplina apareceu */
+  function getSearchSnippet(s, ft){
+    if(!ft) return '';
+    if(normalizeText(s.disciplina).includes(ft)) return ''; // já bateu pelo nome, não precisa de trecho
+    const rawBody = (s.body || '').toString();
+    const nBody = normalizeText(rawBody);
+    const idx = nBody.indexOf(ft);
+    if(idx === -1) return '';
+    const start = Math.max(0, idx - 45);
+    const end = Math.min(rawBody.length, idx + ft.length + 70);
+    let snippet = rawBody.substring(start, end)
+      .replace(/[#*_>`\[\]]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const escaped = ft.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const markRegex = new RegExp(`(${escaped})`, 'i');
+    // procura a versão original (com acento) equivalente pra grifar corretamente
+    const matchInSnippet = normalizeText(snippet).match(markRegex);
+    if(matchInSnippet){
+      const mIdx = normalizeText(snippet).indexOf(matchInSnippet[0]);
+      snippet = snippet.slice(0, mIdx) + '<mark>' + snippet.slice(mIdx, mIdx + matchInSnippet[0].length) + '</mark>' + snippet.slice(mIdx + matchInSnippet[0].length);
+    }
+    return (start > 0 ? '…' : '') + snippet + (end < rawBody.length ? '…' : '');
+  }
+
+  /* 🔧 MELHORIA: rola a página até o trecho exato do texto que combina com a busca
+     e dá um destaque temporário nele, pra não precisar ler a matéria inteira procurando */
+  function highlightAndScrollToSearch(term){
+    if(!term) return;
+    const bodyText = document.querySelector('.body-text');
+    if(!bodyText) return;
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
+    const walker = document.createTreeWalker(bodyText, NodeFilter.SHOW_TEXT, null);
+    let node;
+    while(node = walker.nextNode()){
+      const match = node.nodeValue.match(regex);
+      if(match){
+        const idx = match.index;
+        try{
+          const range = document.createRange();
+          range.setStart(node, idx);
+          range.setEnd(node, idx + match[0].length);
+          const span = document.createElement('span');
+          span.className = 'search-jump-hit';
+          range.surroundContents(span);
+          span.scrollIntoView({ behavior:'smooth', block:'center' });
+          setTimeout(() => { span.classList.remove('search-jump-hit'); }, 2800);
+        }catch(err){ /* se não der pra envolver o trecho, ignora silenciosamente */ }
+        break;
+      }
+    }
+  }
+
   function buildNav(filterText){
     nav.innerHTML = '';
     const progress = getProgress();
@@ -1301,8 +1388,20 @@
         const btn = document.createElement('button');
         btn.className = 'subject-item' + (s.slug === activeSlug ? ' active' : '') + (progress[s.slug] ? ' done' : '') + (progress[s.slug + '-favorited'] ? ' favorited' : '');
         btn.innerHTML = `<span>${s.disciplina}</span><span class="code">${s.codigo||''}</span><span class="check">✓</span><span class="star">⭐</span>`;
-        btn.onclick = () => openSubject(s);
+        btn.onclick = () => openSubject(s, ft);
         li.appendChild(btn);
+
+        /* 🔧 MELHORIA: se o motivo do resultado foi o TEXTO da matéria (não o nome),
+           mostra o trecho embaixo pra já saber se é aquilo que procurava */
+        const snippet = ft ? getSearchSnippet(s, ft) : '';
+        if(snippet){
+          const snippetEl = document.createElement('div');
+          snippetEl.className = 'search-snippet';
+          snippetEl.innerHTML = snippet;
+          snippetEl.onclick = () => openSubject(s, ft);
+          li.appendChild(snippetEl);
+        }
+
         list.appendChild(li);
       });
 
@@ -1339,7 +1438,7 @@
     return out.join('\n');
   }
 
-  function openSubject(s){
+  function openSubject(s, searchTerm){
     activeSlug = s.slug;
     window.currentOpenSubject = s;
     const progress = getProgress();
@@ -1388,7 +1487,16 @@
     topbarTitle.textContent = s.disciplina;
     buildNav(searchInput.value);
     closeSidebarMobile();
-    window.scrollTo(0,0);
+
+    /* 🔧 MELHORIA: se veio de uma busca por texto, pula direto pro trecho em vez de
+       jogar sempre pro topo da página obrigando a ler tudo */
+    if(searchTerm){
+      window.scrollTo(0,0);
+      setTimeout(() => highlightAndScrollToSearch(searchTerm), 60);
+    } else {
+      window.scrollTo(0,0);
+    }
+
     restoreHighlights(s.slug);
     setupTopicBookmarks(s.slug);
   }
