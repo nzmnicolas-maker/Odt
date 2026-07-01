@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Odonto // Estudos</title>
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14202B">
+<!-- 🔤 Tipografia real: as fontes já eram referenciadas no CSS mas nunca eram
+     carregadas — o site caía sempre no fallback do sistema. Agora carregamos
+     de verdade, com preconnect pra não atrasar o primeiro parágrafo. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <script src="marked.umd.js"></script>
 <!-- 🔐 CONFIGURAÇÃO SEGURA DO ASSISTENTE -->
 <script>
@@ -28,7 +35,10 @@
     --graphite-soft:#5C5A52;
     --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+    --display: 'Fraunces', 'Source Serif 4', Georgia, serif;
     --kb-offset: 0px;
+    --read-scale: 1;
+    --read-measure: 68ch;
   }
 
   /* Variáveis para o Modo Escuro */
@@ -76,9 +86,12 @@
     position:fixed;
     top:0; left:0; bottom:0;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
     transform:translateX(0);
     transition:transform .25s ease;
     z-index:50;
+    padding-bottom:env(safe-area-inset-bottom);
   }
   .sidebar-header{
     padding:22px 20px 14px;
@@ -107,13 +120,16 @@
     border: 1px solid rgba(255,255,255,0.1);
     color: #F2EFE6;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 8px 11px;
+    min-width:40px;
+    min-height:40px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
     transition: all 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
   .theme-btn:hover{ background: rgba(255,255,255,0.15); }
+  .theme-btn:active{ background: rgba(255,255,255,0.22); transform:scale(.94); }
 
   .tagline{
     font-size:11px;
@@ -133,7 +149,7 @@
     outline:none;
     transition:all .25s ease;
   }
-  @media (min-width: 881px){
+  @media (min-width: 881px) and (pointer: fine){
     .search-input{ font-size:12.5px; }
   }
   .search-input::placeholder{color:#5E7886;}
@@ -223,6 +239,7 @@
     transform:translateX(4px);
   }
   .subject-item:hover .code{color:#7FA8B8;}
+  .subject-item:active{ background:rgba(255,255,255,.12); }
   .subject-item.active{
     background:#1F5673;
     color:#fff;
@@ -278,6 +295,13 @@
     border-radius:2px;
     transition:width .3s ease;
   }
+  .streak-display{
+    margin-top:9px;
+    font-family:var(--mono);
+    font-size:10px;
+    color:#E8A023;
+    letter-spacing:.03em;
+  }
 
   /* Utility Box (Timer Pomodoro) */
   .focus-timer {
@@ -297,12 +321,16 @@
     background: rgba(255,255,255,0.08);
     border: none;
     color: #fff;
-    padding: 4px 8px;
-    border-radius: 2px;
+    padding: 9px 12px;
+    min-height:38px;
+    border-radius: 3px;
     cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
     -webkit-tap-highlight-color: transparent;
   }
   .timer-btn:hover { background: rgba(255,255,255,0.15); }
+  .timer-btn:active { background: rgba(255,255,255,0.25); transform:scale(.96); }
 
   .sidebar-footer{
     margin-top:auto;
@@ -321,7 +349,9 @@
     background: none;
     border: 1px solid rgba(255,255,255,0.15);
     color: #5E7886;
-    padding: 4px 6px;
+    padding: 9px 8px;
+    min-height:38px;
+    flex:1;
     border-radius: 3px;
     font-size: 9.5px;
     cursor: pointer;
@@ -333,6 +363,7 @@
     color: #CFE0E8;
     border-color: rgba(255,255,255,0.3);
   }
+  .backup-btn:active{ background:rgba(255,255,255,.08); transform:scale(.96); }
 
   /* ---------- main ---------- */
   .main{
@@ -340,6 +371,24 @@
     flex:1;
     min-width:0;
     padding:0 0 80px;
+  }
+  .content{
+    padding:40px 48px 0;
+    max-width:900px;
+    margin:0 auto;
+  }
+  html[data-reading-focus="1"] .sidebar{ transform:translateX(-100%); }
+  html[data-reading-focus="1"] .main{ margin-left:0; }
+  html[data-reading-focus="1"] .content{ max-width:760px; }
+  html[data-reading-focus="1"] .ai-toggle-btn,
+  html[data-reading-focus="1"] .ai-panel{ display:none; }
+  body[data-paper="sepia"]{
+    --paper:#F1E6CE;
+    --paper-line:#E1D1AC;
+    --ink:#3B2B18;
+    --ink-soft:#4A3A24;
+    --graphite:#3B2E1D;
+    --graphite-soft:#6B5A3F;
   }
   .topbar{
     display:none;
@@ -372,6 +421,7 @@
     background:#1F5673;
     box-shadow:0 2px 6px rgba(0,0,0,.2);
   }
+  .menu-btn:active{ transform:scale(.96); }
   .topbar .brand-mobile{
     font-family:var(--mono);
     font-size:12px;
@@ -440,12 +490,26 @@
   }
   .stamp-row span b{color:var(--graphite); font-weight:600;}
   .stamp h1{
-    font-family:var(--serif);
-    font-size:28px;
-    font-weight:700;
+    font-family:var(--display);
+    font-size:29px;
+    font-weight:600;
     margin:0 0 14px;
     color:var(--ink);
-    letter-spacing:-.01em;
+    letter-spacing:-.015em;
+    font-optical-sizing:auto;
+  }
+  .stamp-meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:14px;
+  }
+  .stamp-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
   }
   .study-toggle{
     font-family:var(--mono);
@@ -466,11 +530,131 @@
     border-color:var(--pen-blue);
     background:var(--pen-blue-soft);
   }
+  .study-toggle:active{ transform:scale(.97); }
   .study-toggle.done{
     background:var(--pen-blue);
     border-color:var(--pen-blue);
     color:#fff;
     box-shadow:0 2px 8px rgba(31,86,115,0.3);
+  }
+
+  /* ---------- Modo Leitura ---------- */
+  .read-toolbar{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .read-toolbar-group{
+    display:flex;
+    align-items:center;
+    border:1.5px solid var(--graphite);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .read-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    background:var(--paper);
+    color:var(--graphite);
+    border:none;
+    padding:9px 12px;
+    cursor:pointer;
+    transition:all .2s ease;
+    min-width:40px;
+    min-height:38px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .read-btn + .read-btn{ border-left:1px solid var(--graphite); }
+  .read-btn:hover{ background:var(--pen-blue-soft); }
+  .read-btn:active{ background:var(--pen-blue); color:#fff; }
+  .read-btn.icon-btn{
+    border:1.5px solid var(--graphite);
+    border-radius:3px;
+    padding:9px 12px;
+  }
+  .read-btn.icon-btn.active{
+    background:var(--pen-blue);
+    border-color:var(--pen-blue);
+    color:#fff;
+  }
+  .read-meta{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--graphite-soft);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  /* Sumário (índice) da disciplina */
+  .toc-wrap{ position:relative; }
+  .toc-panel{
+    display:none;
+    background:var(--pen-blue-soft);
+    border:1px solid var(--paper-line);
+    border-radius:4px;
+    padding:14px 16px;
+    margin:16px 0 24px;
+    max-width:var(--read-measure);
+  }
+  .toc-panel.open{ display:block; }
+  .toc-panel h4{
+    margin:0 0 10px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--pen-blue);
+  }
+  .toc-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    max-height:280px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .toc-list a{
+    display:block;
+    font-family:var(--serif);
+    font-size:14px;
+    color:var(--graphite);
+    text-decoration:none;
+    padding:7px 8px;
+    border-radius:3px;
+    transition:background .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .toc-list a:hover{ background:rgba(31,86,115,.08); }
+  .toc-list a.toc-h3{ padding-left:22px; font-size:13px; color:var(--graphite-soft); }
+  .toc-list a.toc-active{ background:var(--pen-blue); color:#fff; }
+
+  /* Tempo de leitura estimado */
+  .reading-time-pill{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--graphite-soft);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  /* Print / exportar PDF */
+  @media print{
+    .sidebar, .topbar, .ai-toggle-btn, .ai-panel, .overlay,
+    .stamp-actions, .pin-topic-btn, .highlight-menu, .toc-panel{ display:none !important; }
+    .main{ margin-left:0 !important; }
+    .content{ max-width:100% !important; padding:0 !important; }
+    body{ background:#fff; color:#000; }
+    .stamp{ border-color:#000; }
+    .body-text{ max-width:100% !important; font-size:12pt !important; }
+    .body-text h2, .body-text h3{ break-after:avoid; }
+    .body-text p, .body-text li{ break-inside:avoid; }
   }
 
   .favorite-toggle{
@@ -493,6 +677,7 @@
     border-color:#E8A023;
     background:#FFF8E7;
   }
+  .favorite-toggle:active{ transform:scale(.97); }
   .favorite-toggle.favorited{
     background:#FFF8E7;
     border-color:#E8A023;
@@ -564,18 +749,23 @@
 
   /* 🛠️ SISTEMA DE MARCAÇÃO PARA TELAS DE TOQUE (CELULAR E TABLET) */
   .pin-topic-btn {
-    display: inline-block;
-    margin-left: 10px;
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-left: 6px;
     opacity: 0.35;
     background: none;
     border: none;
     cursor: pointer;
     font-size: 18px;
-    padding: 6px 10px;
+    padding: 10px;
+    min-width:40px;
+    min-height:40px;
     transition: opacity 0.2s, transform 0.2s;
     vertical-align: middle;
     -webkit-tap-highlight-color: transparent;
   }
+  .pin-topic-btn:active{ transform:scale(1.2); }
   
   .pin-topic-btn.pinned {
     opacity: 1 !important;
@@ -602,6 +792,7 @@
     padding: 14px 16px;
     margin-bottom: 24px;
     border-radius: 0 3px 3px 0;
+    max-width:var(--read-measure);
   }
   [data-theme="dark"] .pinned-topics-summary {
     background: #2D1F1D;
@@ -635,22 +826,31 @@
   }
 
   /* body typography */
-  .body-text{font-size:16.5px; line-height:1.7;}
+  .body-text{
+    font-size:calc(16.5px * var(--read-scale));
+    line-height:1.7;
+    max-width:var(--read-measure);
+    transition:font-size .15s ease, max-width .2s ease;
+  }
   .body-text h2{
-    font-family:var(--serif);
-    font-size:21px;
+    font-family:var(--display);
+    font-weight:600;
+    font-size:calc(21px * var(--read-scale));
     margin:38px 0 14px;
     color:var(--ink);
     border-bottom:1px solid var(--paper-line);
     padding-bottom:8px;
     transition: all 0.2s ease;
+    scroll-margin-top:90px;
   }
   .body-text h3{
     font-family:var(--serif);
-    font-size:17.5px;
+    font-weight:600;
+    font-size:calc(17.5px * var(--read-scale));
     margin:26px 0 10px;
     color:var(--ink-soft);
     transition: all 0.2s ease;
+    scroll-margin-top:90px;
   }
   .body-text p{margin:0 0 14px;}
   .body-text ul, .body-text ol{margin:0 0 16px; padding-left:22px;}
@@ -789,13 +989,16 @@
   }
   .ai-close-btn{
     background:none; border:none; color:#CFE0E8;
-    font-size:14px; cursor:pointer; padding:4px;
+    font-size:15px; cursor:pointer; padding:10px;
+    min-width:40px; min-height:40px;
     -webkit-tap-highlight-color: transparent;
   }
   [data-theme="dark"] .ai-close-btn{ color:#14202B; }
   .ai-messages{
     flex:1;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
     padding:14px;
     display:flex;
     flex-direction:column;
@@ -846,7 +1049,7 @@
     outline:none;
     max-height:120px;
   }
-  @media (min-width: 881px){
+  @media (min-width: 881px) and (pointer: fine){
     .ai-input{ font-size:14px; }
   }
   .ai-input:focus{border-color:var(--pen-blue);}
@@ -873,9 +1076,11 @@
     background:none;
     border:none;
     color:#CFE0E8;
-    font-size:15px;
+    font-size:16px;
     cursor:pointer;
-    padding:4px 8px;
+    padding:10px;
+    min-width:40px;
+    min-height:40px;
     border-radius:4px;
     transition:background .15s ease;
     -webkit-tap-highlight-color: transparent;
@@ -918,6 +1123,12 @@
     height:auto;
     max-height:none;
     border-radius:10px;
+  }
+
+  @media (max-width: 480px){
+    .btn-label{ display:none; }
+    .read-btn.icon-btn{ padding:9px 11px; }
+    .stamp{ padding:16px 16px; }
   }
 
   @media (max-width: 880px){
@@ -977,6 +1188,7 @@
       <div class="progress-track">
         <div class="progress-fill" id="progressFill" style="width:0%"></div>
       </div>
+      <div class="streak-display" id="streakDisplay">comece hoje</div>
     </div>
     
     <nav class="nav" id="nav"></nav>
@@ -1082,6 +1294,131 @@
     localStorage.setItem('odonto-theme', currentTheme);
     themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
   });
+
+  // --- MOTOR DO MODO LEITURA (tamanho de fonte, papel sépia, foco sem distrações) ---
+  let readScale = parseFloat(localStorage.getItem('odonto-read-scale')) || 1;
+  document.documentElement.style.setProperty('--read-scale', readScale);
+
+  let paperMode = localStorage.getItem('odonto-paper') || '';
+  if(paperMode === 'sepia'){ document.body.setAttribute('data-paper', 'sepia'); }
+
+  let readingFocus = false;
+
+  function syncReadToolbarUI(){
+    const sepiaBtn = document.getElementById('sepiaBtn');
+    const focusBtn = document.getElementById('focusBtn');
+    if(sepiaBtn) sepiaBtn.classList.toggle('active', paperMode === 'sepia');
+    if(focusBtn) focusBtn.classList.toggle('active', readingFocus);
+  }
+
+  function setReadScale(v){
+    readScale = Math.min(1.5, Math.max(0.85, Math.round(v * 10) / 10));
+    document.documentElement.style.setProperty('--read-scale', readScale);
+    localStorage.setItem('odonto-read-scale', readScale);
+  }
+
+  function toggleSepia(){
+    paperMode = paperMode === 'sepia' ? '' : 'sepia';
+    if(paperMode === 'sepia'){
+      document.body.setAttribute('data-paper', 'sepia');
+    } else {
+      document.body.removeAttribute('data-paper');
+    }
+    localStorage.setItem('odonto-paper', paperMode);
+    syncReadToolbarUI();
+  }
+
+  function toggleFocus(){
+    readingFocus = !readingFocus;
+    document.documentElement.setAttribute('data-reading-focus', readingFocus ? '1' : '0');
+    if(readingFocus) closeSidebarMobile();
+    syncReadToolbarUI();
+  }
+
+  // --- MOTOR DO SUMÁRIO (TOC) DA DISCIPLINA ---
+  let tocObserver = null;
+
+  function buildToc(){
+    const tocPanel = document.getElementById('tocPanel');
+    if(!tocPanel) return;
+    const headings = Array.from(document.querySelectorAll('.body-text h2, .body-text h3'));
+    if(headings.length === 0){
+      tocPanel.innerHTML = '<h4>Sumário</h4><p style="font-family:var(--mono); font-size:12px; color:var(--graphite-soft); margin:0;">Nenhuma seção encontrada nesta disciplina.</p>';
+      return;
+    }
+    const items = headings.map(h => {
+      const label = h.textContent.replace('📌','').trim();
+      const cls = h.tagName === 'H3' ? 'toc-h3' : '';
+      return `<li><a href="#${h.id}" class="${cls}" data-target="${h.id}">${label}</a></li>`;
+    }).join('');
+    tocPanel.innerHTML = `<h4>☰ Sumário da disciplina</h4><ul class="toc-list">${items}</ul>`;
+
+    tocPanel.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.getElementById(a.dataset.target);
+        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+        const tocBtn = document.getElementById('tocBtn');
+        tocPanel.classList.remove('open');
+        if(tocBtn) tocBtn.classList.remove('active');
+      });
+    });
+
+    if(tocObserver) tocObserver.disconnect();
+    tocObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const link = tocPanel.querySelector(`a[data-target="${entry.target.id}"]`);
+        if(!link) return;
+        if(entry.isIntersecting){
+          tocPanel.querySelectorAll('a').forEach(a => a.classList.remove('toc-active'));
+          link.classList.add('toc-active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    headings.forEach(h => tocObserver.observe(h));
+  }
+
+  function toggleToc(){
+    const tocPanel = document.getElementById('tocPanel');
+    const tocBtn = document.getElementById('tocBtn');
+    if(!tocPanel) return;
+    const isOpen = tocPanel.classList.toggle('open');
+    if(tocBtn) tocBtn.classList.toggle('active', isOpen);
+  }
+
+  // --- MOTOR DE STREAK DE ESTUDO (dias consecutivos) ---
+  const STREAK_KEY = 'odonto-estudo-dias';
+  function registerStudyDay(){
+    const today = new Date().toISOString().slice(0,10);
+    const days = JSON.parse(localStorage.getItem(STREAK_KEY) || '[]');
+    if(!days.includes(today)){
+      days.push(today);
+      localStorage.setItem(STREAK_KEY, JSON.stringify(days));
+    }
+    renderStreak();
+  }
+  function computeStreak(days){
+    const set = new Set(days);
+    let streak = 0;
+    let cursor = new Date();
+    while(true){
+      const key = cursor.toISOString().slice(0,10);
+      if(set.has(key)){
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+  function renderStreak(){
+    const el = document.getElementById('streakDisplay');
+    if(!el) return;
+    const days = JSON.parse(localStorage.getItem(STREAK_KEY) || '[]');
+    const streak = computeStreak(days);
+    el.textContent = streak > 0 ? `🔥 ${streak} dia${streak > 1 ? 's' : ''} seguido${streak > 1 ? 's' : ''}` : 'comece hoje';
+  }
 
   // --- MOTOR DE BACKUP ---
   document.getElementById('exportBtn').addEventListener('click', () => {
@@ -1507,22 +1844,42 @@
     const calloutHtml = preprocessCallouts(s.body);
     const htmlBody = marked.parse(calloutHtml, { gfm: true, breaks: false });
 
+    const wordCount = (s.body || '').toString().trim().split(/\s+/).filter(Boolean).length;
+    const readMinutes = Math.max(1, Math.round(wordCount / 200));
+
     content.innerHTML = `
       <div class="stamp">
         <div class="stamp-row">
           <span>código <b>${s.codigo || '—'}</b></span>
           <span>carga <b>${s.carga_horaria || '—'}</b></span>
           <span>nível <b>${s.periodo || '—'}</b></span>
+          <span class="reading-time-pill">⏱ ~${readMinutes} min de leitura</span>
         </div>
         <h1>${s.disciplina}</h1>
-        <div style="display:flex; gap:8px;">
-          <button class="study-toggle ${done ? 'done' : ''}" id="studyBtn">
-            ${done ? '✓ Estudada' : 'Marcar como estudada'}
-          </button>
-          <button class="favorite-toggle ${progress[s.slug + '-favorited'] ? 'favorited' : ''}" id="favoriteBtn">
-            ${progress[s.slug + '-favorited'] ? '⭐ Favorita' : '☆ Favoritar'}
-          </button>
+        <div class="stamp-meta-row">
+          <div class="stamp-actions">
+            <button class="study-toggle ${done ? 'done' : ''}" id="studyBtn">
+              ${done ? '✓ Estudada' : 'Marcar como estudada'}
+            </button>
+            <button class="favorite-toggle ${progress[s.slug + '-favorited'] ? 'favorited' : ''}" id="favoriteBtn">
+              ${progress[s.slug + '-favorited'] ? '⭐ Favorita' : '☆ Favoritar'}
+            </button>
+          </div>
+          <div class="read-toolbar">
+            <button class="read-btn icon-btn" id="tocBtn" title="Sumário da disciplina" aria-label="Abrir sumário">☰ <span class="btn-label">Sumário</span></button>
+            <div class="read-toolbar-group" role="group" aria-label="Tamanho do texto">
+              <button class="read-btn" id="fontDownBtn" title="Diminuir texto" aria-label="Diminuir texto">A−</button>
+              <button class="read-btn" id="fontResetBtn" title="Tamanho padrão" aria-label="Tamanho padrão">A</button>
+              <button class="read-btn" id="fontUpBtn" title="Aumentar texto" aria-label="Aumentar texto">A+</button>
+            </div>
+            <button class="read-btn icon-btn" id="sepiaBtn" title="Papel sépia" aria-label="Alternar papel sépia">📄 <span class="btn-label">Sépia</span></button>
+            <button class="read-btn icon-btn" id="focusBtn" title="Modo leitura sem distrações" aria-label="Alternar modo foco">🔎 <span class="btn-label">Foco</span></button>
+            <button class="read-btn icon-btn" id="printBtn" title="Imprimir / exportar PDF" aria-label="Imprimir ou exportar em PDF">🖨️ <span class="btn-label">PDF</span></button>
+          </div>
         </div>
+      </div>
+      <div class="toc-wrap">
+        <div class="toc-panel" id="tocPanel"></div>
       </div>
       <div id="pinnedSummaryContainer" style="display:none;"></div>
       <div class="body-text">${htmlBody}</div>
@@ -1544,9 +1901,19 @@
       buildNav(searchInput.value);
     };
 
+    document.getElementById('fontDownBtn').onclick = () => setReadScale(readScale - 0.1);
+    document.getElementById('fontUpBtn').onclick = () => setReadScale(readScale + 0.1);
+    document.getElementById('fontResetBtn').onclick = () => setReadScale(1);
+    document.getElementById('sepiaBtn').onclick = toggleSepia;
+    document.getElementById('focusBtn').onclick = toggleFocus;
+    document.getElementById('printBtn').onclick = () => window.print();
+    document.getElementById('tocBtn').onclick = toggleToc;
+    syncReadToolbarUI();
+
     topbarTitle.textContent = s.disciplina;
     buildNav(searchInput.value);
     closeSidebarMobile();
+    registerStudyDay();
 
     /* 🔧 MELHORIA: se veio de uma busca por texto, pula direto pro trecho em vez de
        jogar sempre pro topo da página obrigando a ler tudo */
@@ -1559,6 +1926,7 @@
 
     restoreHighlights(s.slug);
     setupTopicBookmarks(s.slug);
+    buildToc();
   }
 
   function closeSidebarMobile(){
@@ -1575,6 +1943,7 @@
   searchInput.addEventListener('input', (e) => buildNav(e.target.value));
 
   buildNav('');
+  renderStreak();
 })();
 </script>
 
