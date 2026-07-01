@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Odonto // Estudos</title>
 <link rel="manifest" href="manifest.json">
 <script src="marked.umd.js"></script>
@@ -121,11 +121,14 @@
     border:1px solid rgba(255,255,255,.12);
     color:#E9ECE3;
     font-family:var(--mono);
-    font-size:12.5px;
+    font-size:16px;
     padding:10px 12px;
     border-radius:4px;
     outline:none;
     transition:all .25s ease;
+  }
+  @media (min-width: 881px){
+    .search-input{ font-size:12.5px; }
   }
   .search-input::placeholder{color:#5E7886;}
   .search-input:focus{
@@ -788,11 +791,14 @@
     border-radius:4px;
     padding:8px 10px;
     font-family:var(--serif);
-    font-size:14px;
+    font-size:16px;
     background:var(--paper);
     color:var(--graphite);
     outline:none;
     max-height:120px;
+  }
+  @media (min-width: 881px){
+    .ai-input{ font-size:14px; }
   }
   .ai-input:focus{border-color:var(--pen-blue);}
   .ai-send-btn{
@@ -1222,15 +1228,33 @@
     updateSummaryUI();
   }
 
+  function normalizeText(str){
+    return (str || '')
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // remove acentos p/ busca mais tolerante
+  }
+
+  function subjectMatchesSearch(s, ft){
+    if(!ft) return true;
+    const haystacks = [
+      s.disciplina,
+      s.codigo,
+      s.periodo,
+      s.carga_horaria,
+      s.body
+    ];
+    return haystacks.some(field => normalizeText(field).includes(ft));
+  }
+
   function buildNav(filterText){
     nav.innerHTML = '';
     const progress = getProgress();
-    const ft = (filterText||'').toLowerCase().trim();
+    const ft = normalizeText(filterText||'').trim();
 
     SITE_DATA.forEach(periodObj => {
-      const subjects = periodObj.subjects.filter(s =>
-        !ft || s.disciplina.toLowerCase().includes(ft)
-      );
+      const subjects = periodObj.subjects.filter(s => subjectMatchesSearch(s, ft));
       if(ft && subjects.length === 0) return;
 
       const group = document.createElement('div');
