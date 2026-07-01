@@ -75,10 +75,42 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     return text;
   }
 
+  // 🔧 MELHORIA: corrige o "bug" clássico de mobile onde o teclado virtual
+  // (iOS/Android) sobrepõe a caixinha de digitar. Usa a Visual Viewport API
+  // (quando disponível) pra empurrar o painel pra cima na altura exata do teclado.
+  function setupKeyboardOffsetFix(){
+    if(!window.visualViewport){
+      document.documentElement.style.setProperty('--kb-offset', '0px');
+      return;
+    }
+    const vv = window.visualViewport;
+    function adjust(){
+      const offset = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+      document.documentElement.style.setProperty('--kb-offset', offset + 'px');
+    }
+    vv.addEventListener('resize', adjust);
+    vv.addEventListener('scroll', adjust);
+    window.addEventListener('orientationchange', () => setTimeout(adjust, 250));
+    adjust();
+  }
+
+  // 🔧 MELHORIA: define o tamanho "padrão" do painel automaticamente
+  // conforme o tipo de dispositivo (celular / tablet / desktop), sem
+  // depender do usuário escolher — evita telas espremidas ou cortadas.
+  function getDeviceTier(){
+    const w = window.innerWidth;
+    if(w <= 600) return 'phone';
+    if(w <= 1024) return 'tablet';
+    return 'desktop';
+  }
+
+  const EXPAND_KEY = 'odonto-ai-expanded';
+
   function initWidget(){
     const panel = document.getElementById('aiPanel');
     const toggleBtn = document.getElementById('aiToggleBtn');
     const closeBtn = document.getElementById('aiCloseBtn');
+    const expandBtn = document.getElementById('aiExpandBtn');
     const input = document.getElementById('aiInput');
     const sendBtn = document.getElementById('aiSendBtn');
     const messages = document.getElementById('aiMessages');
@@ -86,19 +118,63 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
 
     if(!panel || !toggleBtn) return;
 
+    setupKeyboardOffsetFix();
+    document.documentElement.setAttribute('data-device-tier', getDeviceTier());
+    window.addEventListener('resize', () => {
+      document.documentElement.setAttribute('data-device-tier', getDeviceTier());
+    });
+
     function updateSubjectLabel(){
       const subj = currentSubjectContext();
       subjectLabel.textContent = subj ? `lendo: ${subj.disciplina}` : 'nenhuma disciplina aberta';
     }
 
+    function updateExpandIcon(){
+      if(!expandBtn) return;
+      const expanded = panel.classList.contains('expanded');
+      expandBtn.innerHTML = expanded ? '&#8600;' : '&#8599;'; // seta pra dentro / pra fora
+      expandBtn.setAttribute('aria-label', expanded ? 'Reduzir chat' : 'Expandir chat');
+      expandBtn.title = expanded ? 'Reduzir chat' : 'Expandir chat (aba maior)';
+    }
+
+    // Aplica automaticamente um "padrão" de tamanho por dispositivo assim que
+    // o painel abre. No celular ele já nasce ocupando a tela quase toda
+    // (like um app de chat de verdade), no tablet/desktop nasce compacto,
+    // com opção de expandir manualmente pelo botão ↗.
+    function applyDefaultSizeForDevice(){
+      const tier = getDeviceTier();
+      if(tier === 'phone'){
+        panel.classList.add('expanded');
+      } else {
+        const wantsExpanded = localStorage.getItem(EXPAND_KEY) === '1';
+        panel.classList.toggle('expanded', wantsExpanded);
+      }
+      updateExpandIcon();
+    }
+
     toggleBtn.onclick = () => {
       panel.classList.toggle('open');
       if(panel.classList.contains('open')){
+        applyDefaultSizeForDevice();
         updateSubjectLabel();
         input.focus();
       }
     };
     closeBtn.onclick = () => panel.classList.remove('open');
+
+    if(expandBtn){
+      expandBtn.onclick = () => {
+        const tier = getDeviceTier();
+        const nowExpanded = panel.classList.toggle('expanded');
+        updateExpandIcon();
+        // No celular o painel já é sempre "cheio"; a preferência de expandir
+        // só faz sentido salvar pra tablet/desktop.
+        if(tier !== 'phone'){
+          localStorage.setItem(EXPAND_KEY, nowExpanded ? '1' : '0');
+        }
+        input.focus();
+      };
+    }
 
     function appendMessage(role, text){
       const div = document.createElement('div');
