@@ -28,6 +28,7 @@
     --graphite-soft:#5C5A52;
     --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --serif: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+    --kb-offset: 0px;
   }
 
   /* Variáveis para o Modo Escuro */
@@ -756,7 +757,7 @@
     transform:translateY(12px) scale(.97);
     opacity:0;
     pointer-events:none;
-    transition:transform .16s ease, opacity .16s ease;
+    transition:transform .16s ease, opacity .16s ease, width .2s ease, height .2s ease, bottom .2s ease, right .2s ease;
   }
   .ai-panel.open{
     transform:translateY(0) scale(1);
@@ -862,6 +863,62 @@
     -webkit-tap-highlight-color: transparent;
   }
   .ai-send-btn:disabled{opacity:.5; cursor:default;}
+
+  .ai-panel-header-actions{
+    display:flex;
+    align-items:center;
+    gap:2px;
+  }
+  .ai-expand-btn{
+    background:none;
+    border:none;
+    color:#CFE0E8;
+    font-size:15px;
+    cursor:pointer;
+    padding:4px 8px;
+    border-radius:4px;
+    transition:background .15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ai-expand-btn:hover{ background:rgba(255,255,255,.12); }
+  [data-theme="dark"] .ai-expand-btn{ color:#14202B; }
+
+  /* ---------- tamanho padrão do chat por tipo de dispositivo ---------- */
+  html[data-device-tier="desktop"] .ai-panel.expanded{
+    width:480px;
+    height:min(700px, 84vh);
+    max-height:84vh;
+  }
+  html[data-device-tier="tablet"] .ai-panel{
+    width:400px;
+  }
+  html[data-device-tier="tablet"] .ai-panel.expanded{
+    width:min(70vw, 560px);
+    height:min(640px, 80vh);
+    max-height:80vh;
+  }
+
+  /* Celular (iOS/Android): o chat nasce ocupando quase a tela toda,
+     como um app de conversa de verdade. O --kb-offset evita que o
+     campo de digitar fique escondido atrás do teclado virtual. */
+  html[data-device-tier="phone"] .ai-panel{
+    width:calc(100vw - 16px);
+    left:8px;
+    right:8px;
+    bottom:calc(84px + var(--kb-offset, 0px));
+    max-height:58vh;
+    height:58vh;
+  }
+  html[data-device-tier="phone"] .ai-panel.expanded{
+    left:8px;
+    right:8px;
+    top:max(8px, env(safe-area-inset-top));
+    bottom:calc(8px + var(--kb-offset, 0px));
+    width:auto;
+    height:auto;
+    max-height:none;
+    border-radius:10px;
+  }
 
   @media (max-width: 880px){
     .ai-panel{
@@ -971,7 +1028,10 @@
         <div class="ai-panel-title">ASSISTENTE // ESTUDOS</div>
         <div class="ai-panel-subtitle" id="aiSubjectLabel">nenhuma disciplina aberta</div>
       </div>
-      <button id="aiCloseBtn" class="ai-close-btn" aria-label="Fechar">✕</button>
+      <div class="ai-panel-header-actions">
+        <button id="aiExpandBtn" class="ai-expand-btn" aria-label="Expandir chat" title="Expandir chat (aba maior)">&#8599;</button>
+        <button id="aiCloseBtn" class="ai-close-btn" aria-label="Fechar">✕</button>
+      </div>
     </div>
     <div id="aiMessages" class="ai-messages">
       <div class="ai-msg ai-msg-model">
