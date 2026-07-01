@@ -1,18 +1,7 @@
-/* ======================================================
-   ASSISTENTE DE ESTUDOS — Odonto // Estudos
-   ======================================================
-   Esta versão NÃO contém nenhuma chave de API.
-   As perguntas são enviadas para um Cloudflare Worker,
-   que guarda a chave do Gemini escondida e responde por trás.
-
-   Configure abaixo a URL do seu Worker (depois de publicá-lo
-   na Cloudflare). Algo como:
-   https://odonto-assistente.SEU-USUARIO.workers.dev
-====================================================== */
 const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
 
 (function(){
-  let chatHistory = []; // {role: 'user'|'model', text: '...'}
+  let chatHistory = [];
   let isWaiting = false;
 
   function currentSubjectContext(){
@@ -23,7 +12,8 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     const subj = currentSubjectContext();
     let base = "Você é um assistente de estudos de Odontologia, ajudando uma estudante a revisar o conteúdo das disciplinas do curso. " +
       "Responda sempre em português do Brasil, de forma clara, didática e organizada (pode usar listas e negrito quando ajudar). " +
-      "Seja preciso tecnicamente. Se a pergunta não tiver relação com Odontologia ou com os estudos, responda com gentileza que você é focado em ajudar com o conteúdo do curso.";
+      "Seja preciso tecnicamente. Se a pergunta não tiver relação com Odontologia ou com os estudos, responda com gentileza que você é focado em ajudar com o conteúdo do curso. " +
+      "IMPORTANTE: quando a aluna pedir uma quantidade específica de itens (ex: '5 exemplos', '3 questões'), sempre entregue a quantidade completa pedida, nunca pare no meio.";
     if(subj){
       base += `\n\nA aluna está estudando agora a disciplina "${subj.disciplina}" (${subj.codigo}). ` +
         "Use o conteúdo de referência abaixo como base principal para responder, mas você pode complementar com seu conhecimento geral de Odontologia quando fizer sentido:\n\n---\n" +
@@ -32,17 +22,11 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     return base;
   }
 
-  async function sendToAssistant(userText){
-    const contents = chatHistory.map(m => ({
-      role: m.role,
-      parts: [{ text: m.text }]
-    }));
-    contents.push({ role: 'user', parts: [{ text: userText }] });
-
+  async function callGemini(contents){
     const body = {
       contents: contents,
       systemInstruction: { parts: [{ text: systemInstruction() }] },
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
+      generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
     };
 
     const res = await fetch(WORKER_URL, {
@@ -60,6 +44,34 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     const text = candidate && candidate.content && candidate.content.parts
       ? candidate.content.parts.map(p => p.text || '').join('')
       : '(sem resposta)';
+    const finishReason = candidate ? candidate.finishReason : null;
+    return { text, finishReason };
+  }
+
+  async function sendToAssistant(userText){
+    const contents = chatHistory.map(m => ({
+      role: m.role,
+      parts: [{ text: m.text }]
+    }));
+    contents.push({ role: 'user', parts: [{ text: userText }] });
+
+    let { text, finishReason } = await callGemini(contents);
+
+    // 🔧 Se ainda assim cortar por limite de tokens, pede pro modelo
+    // continuar de onde parou, em vez de mostrar a resposta pela metade.
+    let attempts = 0;
+    while (finishReason === 'MAX_TOKENS' && attempts < 2) {
+      attempts++;
+      const continuationContents = [
+        ...contents,
+        { role: 'model', parts: [{ text }] },
+        { role: 'user', parts: [{ text: 'Continue exatamente de onde parou, sem repetir o que já foi escrito.' }] }
+      ];
+      const cont = await callGemini(continuationContents);
+      text += cont.text;
+      finishReason = cont.finishReason;
+    }
+
     return text;
   }
 
@@ -72,7 +84,7 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     const messages = document.getElementById('aiMessages');
     const subjectLabel = document.getElementById('aiSubjectLabel');
 
-    if(!panel || !toggleBtn) return; // widget markup not present, skip silently
+    if(!panel || !toggleBtn) return;
 
     function updateSubjectLabel(){
       const subj = currentSubjectContext();
