@@ -176,10 +176,23 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
       };
     }
 
+    // 🔐 MELHORIA DE SEGURANÇA: o texto que chega aqui vem de uma API externa
+    // (Gemini, via Worker). Antes, ele ia direto pro innerHTML só passando por
+    // marked.parse() — se a resposta contivesse HTML/JS malicioso (por bug do
+    // modelo, ou por alguém interceptando/adulterando a chamada ao Worker),
+    // esse código executaria no navegador de quem estivesse usando o app.
+    // Agora sanitizamos com DOMPurify, do mesmo jeito que já era feito para o
+    // conteúdo de site-data.js — a resposta da IA nunca deveria ter tratamento
+    // mais permissivo do que o conteúdo estático do próprio site.
+    function renderMessageHTML(text){
+      const rawHtml = (typeof marked !== 'undefined') ? marked.parse(text) : text;
+      return window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
+    }
+
     function appendMessage(role, text){
       const div = document.createElement('div');
       div.className = 'ai-msg ' + (role === 'user' ? 'ai-msg-user' : 'ai-msg-model');
-      div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(text) : text;
+      div.innerHTML = renderMessageHTML(text);
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
       return div;

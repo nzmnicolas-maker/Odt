@@ -3,12 +3,19 @@
    Suporte offline e cache de recursos
    ====================================================== */
 
-const CACHE_NAME = 'odonto-estudos-v4';
+// 🔧 MELHORIA: versão do cache incrementada porque agora CSS e JS que antes
+// viviam inline no index.html passaram a ser arquivos próprios (styles.css,
+// app.js) — sem esse bump, clientes com o SW antigo continuariam servindo o
+// index.html velho (com estilo/script embutido) direto do cache, ignorando
+// os arquivos novos.
+const CACHE_NAME = 'odonto-estudos-v5';
 const RUNTIME_CACHE = 'odonto-runtime-v1';
 
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/styles.css',
+  '/app.js',
   '/site-data.js',
   '/marked.umd.js',
   '/manifest.json',
@@ -21,7 +28,7 @@ const ASSETS_TO_CACHE = [
 // ============================================
 self.addEventListener('install', event => {
   console.log('📦 Service Worker instalando...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log('✅ Cacheando arquivos essenciais');
@@ -32,7 +39,7 @@ self.addEventListener('install', event => {
       });
     })
   );
-  
+
   self.skipWaiting(); // Ativar imediatamente
 });
 
@@ -41,7 +48,7 @@ self.addEventListener('install', event => {
 // ============================================
 self.addEventListener('activate', event => {
   console.log('🔄 Service Worker ativando...');
-  
+
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -54,7 +61,7 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  
+
   self.clients.claim(); // Controlar clientes imediatamente
 });
 
@@ -116,7 +123,7 @@ self.addEventListener('fetch', event => {
           return networkResponse;
         }).catch(err => {
           console.warn('⚠️ Falha ao buscar:', url.pathname);
-          
+
           // Retornar página de offline se disponível
           if (request.destination === 'document') {
             return caches.match('/index.html');
@@ -154,4 +161,4 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('✅ Service Worker pronto (v4)');
+console.log('✅ Service Worker pronto (v5)');
