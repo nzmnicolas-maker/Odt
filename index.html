@@ -18,14 +18,31 @@
 <!-- 🎨 GSAP (animações) + Lenis (scroll suave). Ambos são carregados via
      CDN e são OPCIONAIS: motion.js verifica se existem antes de usar, e
      se o CDN falhar (sem internet no primeiro load, etc.) o site continua
-     funcionando normalmente, só sem as animações extras. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+     funcionando normalmente, só sem as animações extras.
+     🔐 NOTA DE SEGURANÇA: idealmente estes dois scripts deveriam ter um
+     atributo integrity="sha384-..." (SRI), igual o DOMPurify acima tem.
+     Não incluímos um hash aqui porque um hash ERRADO quebra o carregamento
+     do script inteiro (o navegador recusa rodar o arquivo se o hash não
+     bater) — pior do que não ter nenhum. Pra gerar o valor correto agora,
+     rode isto no terminal (não precisa de nada além de curl/openssl):
+
+       curl -s https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+       curl -s https://unpkg.com/lenis@1.1.14/dist/lenis.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+
+     Cole o resultado de cada comando em integrity="sha384-RESULTADO_AQUI"
+     nos dois <script> abaixo antes de subir pra produção. Enquanto isso,
+     pelo menos crossorigin="anonymous" já está setado, o que evita que
+     erros desses scripts vazem detalhes sensíveis de outras abas/origens. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- 🔐 CONFIGURAÇÃO SEGURA DO ASSISTENTE -->
 <script>
-  // Define a URL do backend (comentar para usar padrão /api/chat)
-  // Em produção, altere para sua URL de backend seguro
-  // window.ASSISTANT_BACKEND_URL = 'https://seu-backend.replit.dev/api/chat';
+  // Define a URL do backend do assistente de IA. Se deixar comentado,
+  // assistant.js usa o valor padrão fixo definido nele mesmo.
+  // Descomente e ajuste a linha abaixo para apontar pra outro backend
+  // sem precisar editar assistant.js (útil pra trocar entre ambiente de
+  // teste/produção, ou se você migrar o Worker de URL no futuro):
+  // window.ASSISTANT_BACKEND_URL = 'https://seu-worker.workers.dev';
 
   console.log('✅ Página carregada com segurança');
 </script>
