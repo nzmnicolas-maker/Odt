@@ -69,7 +69,7 @@
   // ---------- GSAP: entrada em cascata dos itens da lista lateral ----------
   window.OdontoMotion.animateNavList = function(navEl){
     if(prefersReducedMotion || typeof gsap === 'undefined' || !navEl) return;
-    const items = navEl.querySelectorAll('.subject-item');
+    const items = navEl.querySelectorAll('.subject-item, .search-snippet');
     if(!items.length) return;
     gsap.fromTo(items,
       { opacity: 0, x: -8 },
@@ -101,10 +101,42 @@
     }
   };
 
+  // ---------- GSAP: revelação suave dos blocos de conteúdo ao rolar ----------
+  // Cada h2/h3/callout/tabela aparece com um fade+leve subida na primeira vez
+  // que entra na tela — só uma vez (unobserve), pra não distrair durante a
+  // leitura normal (rolar pra cima e pra baixo não re-anima o que já apareceu).
+  window.OdontoMotion.animateContentReveal = function(bodyTextEl){
+    if(prefersReducedMotion || typeof gsap === 'undefined' || typeof IntersectionObserver === 'undefined' || !bodyTextEl) return;
+
+    const targets = bodyTextEl.querySelectorAll('h2, h3, .callout, table');
+    if(!targets.length) return;
+
+    gsap.set(targets, { opacity: 0, y: 14 });
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          gsap.to(entry.target, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+    targets.forEach(t => io.observe(t));
+  };
+
+  // ---------- GSAP: entrada das mensagens do chat ----------
+  window.OdontoMotion.animateChatMessage = function(msgEl){
+    if(prefersReducedMotion || typeof gsap === 'undefined' || !msgEl) return;
+    gsap.fromTo(msgEl,
+      { opacity: 0, y: 10, scale: 0.98 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out' }
+    );
+  };
+
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', initLenis);
   } else {
     initLenis();
   }
 })();
-
