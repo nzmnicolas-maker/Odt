@@ -195,6 +195,11 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
       div.innerHTML = renderMessageHTML(text);
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
+      // 🎨 Fade + leve subida ao aparecer (defensivo: sem motion.js
+      // carregado, a mensagem só aparece normal, sem animação).
+      if(window.OdontoMotion && window.OdontoMotion.animateChatMessage){
+        window.OdontoMotion.animateChatMessage(div);
+      }
       return div;
     }
 
@@ -202,7 +207,10 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
       const div = document.createElement('div');
       div.className = 'ai-msg ai-msg-model ai-msg-loading';
       div.id = 'aiLoadingMsg';
-      div.textContent = 'digitando...';
+      // 🎨 Bolinhas pulsando (estilo WhatsApp/iMessage) em vez de texto
+      // "digitando..." estático. Markup fixo e controlado por nós (não
+      // vem de resposta de API), então não precisa de sanitização aqui.
+      div.innerHTML = '<span class="ai-typing-dots"><span></span><span></span><span></span></span>';
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     }
@@ -267,4 +275,3 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     initWidget();
   }
 })();
-
