@@ -161,6 +161,7 @@
     h4.textContent = '☰ Sumário da disciplina';
     const ul = document.createElement('ul');
     ul.className = 'toc-list';
+    ul.setAttribute('data-lenis-prevent', ''); // scroll interno próprio, não deve ser controlado pelo Lenis
     headings.forEach(h => {
       const li = document.createElement('li');
       const a = document.createElement('a');
@@ -372,9 +373,19 @@
       });
     });
 
-    const percentage = total > 0 ? (completed / total) * 100 : 0;
-    document.getElementById('progressText').textContent = `${completed}/${total}`;
-    document.getElementById('progressFill').style.width = percentage + '%';
+    const fillEl = document.getElementById('progressFill');
+    const textEl = document.getElementById('progressText');
+
+    // 🎨 Se motion.js (GSAP) carregou, anima a barra/contador; senão cai
+    // no comportamento instantâneo de sempre (defensivo — sem internet
+    // no primeiro load, ou CDN bloqueado, o site continua funcionando).
+    if(window.OdontoMotion && window.OdontoMotion.animateProgress){
+      window.OdontoMotion.animateProgress(completed, total, fillEl, textEl);
+    } else {
+      const percentage = total > 0 ? (completed / total) * 100 : 0;
+      if(textEl) textEl.textContent = `${completed}/${total}`;
+      if(fillEl) fillEl.style.width = percentage + '%';
+    }
   }
 
   let activeSlug = null;
@@ -777,6 +788,13 @@
       group.appendChild(list);
       nav.appendChild(group);
     });
+
+    // 🎨 Entrada em cascata dos itens da lista (defensivo: se motion.js
+    // não carregou, essa chamada simplesmente não faz nada).
+    if(window.OdontoMotion && window.OdontoMotion.animateNavList){
+      window.OdontoMotion.animateNavList(nav);
+    }
+
     updateProgressBar();
   }
 
@@ -913,6 +931,13 @@
     window.currentOpenSubject = s;
 
     renderSubjectContent(s);
+
+    // 🎨 Fade + leve deslize ao trocar de disciplina (defensivo: sem
+    // motion.js carregado, o conteúdo só aparece normal, sem animação).
+    if(window.OdontoMotion && window.OdontoMotion.animateSubjectOpen){
+      window.OdontoMotion.animateSubjectOpen(content);
+    }
+
     bindSubjectHeaderActions(s, searchTerm);
 
     topbarTitle.textContent = s.disciplina;
