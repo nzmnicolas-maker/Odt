@@ -267,3 +267,4 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
     initWidget();
   }
 })();
+
