@@ -15,6 +15,12 @@
 <link rel="stylesheet" href="styles.css">
 <script src="marked.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha512-vh4WBHmRi1NsQfnCmRSl9AbTOFcS2kyvIA0uHkPGqRxTOilj4LcIYuMV3lFRHmm8Wc9WPu6bA0IPO+MG9c4gzA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- 🎨 GSAP (animações) + Lenis (scroll suave). Ambos são carregados via
+     CDN e são OPCIONAIS: motion.js verifica se existem antes de usar, e
+     se o CDN falhar (sem internet no primeiro load, etc.) o site continua
+     funcionando normalmente, só sem as animações extras. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
 <!-- 🔐 CONFIGURAÇÃO SEGURA DO ASSISTENTE -->
 <script>
   // Define a URL do backend (comentar para usar padrão /api/chat)
@@ -29,7 +35,7 @@
 <div class="overlay" id="overlay"></div>
 
 <div class="shell">
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" data-lenis-prevent>
     <div class="sidebar-header">
       <div class="brand-wrap">
         <p class="brand">ODONTO // <strong>ESTUDOS</strong></p>
@@ -106,7 +112,7 @@
         <button id="aiCloseBtn" class="ai-close-btn" aria-label="Fechar">✕</button>
       </div>
     </div>
-    <div id="aiMessages" class="ai-messages">
+    <div id="aiMessages" class="ai-messages" data-lenis-prevent>
       <div class="ai-msg ai-msg-model">
         Oi! Eu sou seu assistente de estudos. Abra uma disciplina no menu e me pergunta qualquer coisa sobre o conteúdo — ou pergunta algo geral de Odontologia mesmo.
       </div>
@@ -132,6 +138,7 @@
 </div>
 
 <script src="site-data.js"></script>
+<script src="motion.js"></script>
 <script src="app.js"></script>
 
 <!-- 📊 Service Worker para Offline Support -->
