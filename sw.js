@@ -3,12 +3,13 @@
    Suporte offline e cache de recursos
    ====================================================== */
 
-// 🔧 MELHORIA: versão do cache incrementada porque agora CSS e JS que antes
-// viviam inline no index.html passaram a ser arquivos próprios (styles.css,
-// app.js) — sem esse bump, clientes com o SW antigo continuariam servindo o
-// index.html velho (com estilo/script embutido) direto do cache, ignorando
-// os arquivos novos.
-const CACHE_NAME = 'odonto-estudos-v5';
+// 🔧 MELHORIA: versão do cache incrementada (v5 → v6) por causa dos ajustes
+// em assistant.js e manifest.json nesta rodada — sem esse bump, clientes com
+// o SW antigo continuariam servindo as versões antigas desses arquivos direto
+// do cache, ignorando os arquivos novos. Regra geral: sempre que styles.css,
+// app.js, assistant.js, site-data.js ou manifest.json mudarem, incremente
+// este número.
+const CACHE_NAME = 'odonto-estudos-v6';
 const RUNTIME_CACHE = 'odonto-runtime-v1';
 
 const ASSETS_TO_CACHE = [
@@ -161,4 +162,4 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('✅ Service Worker pronto (v5)');
+console.log('✅ Service Worker pronto (v6)');
