@@ -1,4 +1,10 @@
-const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
+// 🔧 MELHORIA: URL do Worker agora pode ser sobrescrita via
+// window.ASSISTANT_BACKEND_URL (definida no <script> de config do index.html),
+// sem precisar editar este arquivo. Se a variável não existir, cai no valor
+// padrão abaixo — comportamento 100% compatível com antes.
+const WORKER_URL = (typeof window !== 'undefined' && window.ASSISTANT_BACKEND_URL)
+  ? window.ASSISTANT_BACKEND_URL
+  : "https://fancy-fire-8436.nzmnicolas.workers.dev";
 
 (function(){
   let chatHistory = [];
@@ -227,7 +233,7 @@ const WORKER_URL = "https://fancy-fire-8436.nzmnicolas.workers.dev";
         appendMessage('user', text);
         input.value = '';
         input.style.height = 'auto';
-        appendMessage('model', '⚠ O assistente ainda não foi conectado ao servidor. Peça pra quem configurou o site colar a URL do Worker no arquivo `assistant.js`.');
+        appendMessage('model', '⚠ O assistente ainda não foi conectado ao servidor. Peça pra quem configurou o site colar a URL do Worker no arquivo `assistant.js` (ou definir window.ASSISTANT_BACKEND_URL no index.html).');
         return;
       }
 
