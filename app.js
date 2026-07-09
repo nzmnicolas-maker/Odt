@@ -937,6 +937,11 @@
     if(window.OdontoMotion && window.OdontoMotion.animateSubjectOpen){
       window.OdontoMotion.animateSubjectOpen(content);
     }
+    // 🎨 Cada seção do texto (h2/h3/callout/tabela) aparece suavemente
+    // conforme a aluna rola a página, só na primeira vez que entra na tela.
+    if(window.OdontoMotion && window.OdontoMotion.animateContentReveal){
+      window.OdontoMotion.animateContentReveal(content.querySelector('.body-text'));
+    }
 
     bindSubjectHeaderActions(s, searchTerm);
 
